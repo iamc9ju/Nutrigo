@@ -1,0 +1,116 @@
+
+services:
+  # --- Database (PostgreSQL + pgvector) ---
+  postgres:
+    image: pgvector/pgvector:pg15 # เผื่ออนาคตทำ AI Feature ก็พร้อมเลย
+    container_name: wellmate_postgres
+    env_file:
+      - .env # ดึงค่า Config หลัก
+    environment:
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    ports:
+      - "${POSTGRES_PORT:-5431}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # ถ้ามีไฟล์ init.sql สำหรับสร้างตารางเริ่มต้น ให้เปิดบรรทัดนี้
+      # - ./nestjs-wellmate-backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      # ตรวจสอบว่า DB พร้อมรับ connection หรือยัง (สำคัญมาก!)
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-wellmate_db}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wellmate_network
+
+  # --- Redis (Caching & Queue) ---
+  redis:
+    image: redis:7-alpine
+    container_name: wellmate_redis
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - wellmate_network
+
+  # --- Backend (NestJS) ---
+  backend:
+    build:
+      context: ./nestjs-healthy_talk_backend
+      dockerfile: Dockerfile # หรือ Dockerfile.dev ตามที่คุณตั้งชื่อ
+    container_name: wellmate-backend
+    ports:
+      - "${BACKEND_PORT:-4000}:3000" # Map 4000 -> 3000 (NestJS Default)
+    volumes:
+      - ./nestjs-healthy_talk_backend:/app # Sync Code
+      - /app/node_modules # กัน node_modules หาย
+    env_file:
+      - .env                  # ค่า DB
+      - ./nestjs-healthy_talk_backend/.env # ค่า Backend specific
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_NAME=${POSTGRES_DB}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      postgres:
+        condition: service_healthy # รอจนกว่า DB จะ Healthcheck ผ่าน (จะไม่ error ตอนเริ่ม)
+      redis:
+        condition: service_healthy
+    networks:
+      - wellmate_network
+    restart: unless-stopped
+
+  # --- Frontend (Next.js) ---
+  frontend:
+    build:
+      context: ./nextjs-wellmate-frontend
+      dockerfile: Dockerfile
+    container_name: wellmate-frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - ./nextjs-wellmate-frontend:/app
+      - /app/node_modules
+      - /app/.next
+    env_file:
+      - ./nextjs-wellmate-frontend/.env.local
+    environment:
+      # ส่งค่าให้ Next.js (ต้องระวังเรื่อง Client side/Server side)
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    depends_on:
+      - backend
+    networks:
+      - wellmate_network
+    restart: unless-stopped
+
+  # --- Adminer (ตัวจัดการ DB ผ่านเว็บ) ---
+  adminer:
+    image: adminer:latest
+    container_name: wellmate_adminer
+    ports:
+      - "${ADMINER_PORT:-8081}:8080" # เข้าผ่าน localhost:8081
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    depends_on:
+      - postgres
+    networks:
+      - wellmate_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  wellmate_network:
+    driver: bridge
