@@ -18,7 +18,7 @@ export default function Hero() {
                 {/* Headline */}
                 <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight text-gray-900 leading-tight">
                     สุขภาพดีเริ่มต้นที่<br />
-                    <span className="text-[#A3D133]">Wellmate Platform</span>
+                    <span className="text-[#A3D133]">NutriGo Platform</span>
                 </h1>
 
                 {/* Subheadline */}
@@ -35,7 +35,7 @@ export default function Hero() {
                         <div className="bg-gray-500 rounded-xl overflow-hidden relative"> {/* ลบ aspect-[16/9] ออก */}
                             <img
                                 src="/dashboard-mockup.png"
-                                alt="Wellmate Dashboard Interface"
+                                alt="NutriGo Dashboard Interface"
                                 className="w-full h-auto opacity-90 hover:opacity-100 transition-opacity duration-700" /* ใช้ h-auto แทน h-full */
                             />
                         </div>

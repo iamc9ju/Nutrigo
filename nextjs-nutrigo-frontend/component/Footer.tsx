@@ -7,7 +7,7 @@ export default function Footer() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
                     {/* Brand */}
                     <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-gray-900">Wellmate</h3>
+                        <h3 className="text-xl font-bold text-gray-900">NutriGo</h3>
                         <p className="text-sm text-gray-500 leading-relaxed">
                             เพื่อนคู่คิดด้านสุขภาพของคุณ<br />เพื่อชีวิตที่ดีอย่างยั่งยืน
                         </p>
@@ -55,7 +55,7 @@ export default function Footer() {
                 </div>
 
                 <div className="border-t border-gray-100 pt-8 flex justify-center md:justify-between items-center text-xs text-gray-400">
-                    <p>&copy; 2024 Wellmate. All rights reserved.</p>
+                    <p>&copy; 2024 NutriGo. All rights reserved.</p>
                 </div>
             </div>
         </footer>

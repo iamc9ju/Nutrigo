@@ -113,7 +113,9 @@ export class AuthService {
       },
     });
 
-    return { accessToken, refreshToken };
+    const { passwordHash, ...userData } = user;
+
+    return { accessToken, refreshToken, user: userData };
   }
 
   async refreshAccessToken(

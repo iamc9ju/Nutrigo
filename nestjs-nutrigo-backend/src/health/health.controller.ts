@@ -13,7 +13,6 @@ export class HealthController {
   @HealthCheck()
   check() {
     return this.health.check([
-      // แก้ไขบรรทัดนี้:
       () => this.customPrismaHealth.isHealthy('database'),
     ]);
   }
