@@ -23,23 +23,28 @@ const reviews = [
 
 export default function Testimonials() {
     return (
-        <section className="py-24 bg-transparent">
-            <div className="max-w-7xl mx-auto px-4">
+        <section className="py-24 bg-[#f4f9e6] relative overflow-hidden">
+            <div className="absolute top-10 right-12 text-6xl opacity-15 rotate-[25deg] select-none pointer-events-none">🍊</div>
+            <div className="absolute bottom-10 left-8 text-6xl opacity-15 -rotate-12 select-none pointer-events-none">🥦</div>
+            <div className="absolute top-1/2 right-4 text-5xl opacity-10 rotate-45 select-none pointer-events-none">🍇</div>
+            <div className="absolute top-8 left-1/3 text-4xl opacity-10 rotate-[-10deg] select-none pointer-events-none">🍓</div>
+
+            <div className="max-w-7xl mx-auto px-4 relative z-10">
                 <div className="text-center mb-16">
-                    <h2 className="text-3xl font-bold mb-4">เสียงจากผู้ใช้งานจริง</h2>
+                    <h2 className="text-3xl font-bold mb-4 text-gray-900">เสียงจากผู้ใช้งานจริง</h2>
                     <p className="text-gray-500">ผลลัพธ์ที่พิสูจน์ได้จากสมาชิกครอบครัว NutriGo</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {reviews.map((review, idx) => (
-                        <div key={idx} className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative">
-                            <Quote className="text-[#A3D133] mb-4 w-8 h-8 opacity-50" />
+                        <div key={idx} className="bg-white p-8 rounded-2xl shadow-md border border-[#e8f0d0] hover:shadow-xl hover:-translate-y-1 transition-all relative group">
+                            <Quote className="text-[#C6E065] mb-4 w-8 h-8 opacity-40 group-hover:opacity-70 transition-opacity" />
                             <p className="text-gray-600 mb-6 leading-relaxed">{review.text}</p>
                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-full bg-[#A3D133] flex items-center justify-center text-black font-bold">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#C6E065] to-[#8BC34A] flex items-center justify-center text-white font-bold shadow-sm">
                                     {review.initial}
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-sm">{review.author}</h4>
+                                    <h4 className="font-bold text-sm text-gray-900">{review.author}</h4>
                                     <p className="text-xs text-gray-500">{review.role}</p>
                                 </div>
                             </div>

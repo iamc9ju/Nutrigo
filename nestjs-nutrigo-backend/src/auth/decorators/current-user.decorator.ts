@@ -5,14 +5,6 @@ import {
 } from '@nestjs/common';
 import { JwtPayload } from '../interface/jwt-payload.interface';
 
-/**
- * Custom decorator to extract the current authenticated user from the request.
- *
- * Usage:
- * - @CurrentUser() user: JwtPayload          → returns full user object
- * - @CurrentUser('sub') userId: string       → returns only user.sub
- * - @CurrentUser('email') email: string      → returns only user.email
- */
 export const CurrentUser = createParamDecorator(
   (data: keyof JwtPayload | undefined, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
@@ -34,9 +26,6 @@ export const CurrentUser = createParamDecorator(
   },
 );
 
-/**
- * Type guard function สำหรับ validate JwtPayload
- */
 function isValidJwtPayload(user: unknown): user is JwtPayload {
   return (
     typeof user === 'object' &&

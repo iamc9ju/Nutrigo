@@ -144,7 +144,6 @@ export class AuthService {
     }
 
     if (token.usedAt) {
-      // Token ถูกใช้ซ้ำ = ถูกขโมย → revoke ทั้ง family
       await this.prisma.refreshToken.updateMany({
         where: { family: token.family },
         data: { revokedAt: new Date() },

@@ -89,7 +89,6 @@ export class HealthMetricsService {
     if (metric.patientId !== patientId) {
       throw new ForbiddenException('Not allowed to update this metric');
     }
-    // คำนวณ BMI ใหม่ถ้ามีการเปลี่ยนน้ำหนักหรือส่วนสูง
     const newWeight = dto.weightKg ?? Number(metric.weightKg);
     const newHeight = dto.heightCm ?? Number(metric.heightCm);
     const bmi = this.calculateBmi(newWeight, newHeight);

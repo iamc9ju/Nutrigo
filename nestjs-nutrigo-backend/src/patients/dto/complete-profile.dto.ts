@@ -14,12 +14,12 @@ export class CompleteProfileDto {
   dateOfBirth?: string;
   @IsEnum(GenderType)
   @IsOptional()
-  gender?: GenderType; // 'male' | 'female' | 'other'
+  gender?: GenderType;
   @IsString()
   @MaxLength(5)
   @IsOptional()
-  bloodType?: string; // เช่น 'A', 'B', 'O', 'AB', 'A+', 'B-', ฯลฯ
+  bloodType?: string;
   @IsString({ each: true })
   @IsOptional()
-  chronicDiseases?: string[]; // โรคประจำตัว เช่น ['Diabetes', 'Hypertension']
+  chronicDiseases?: string[];
 }
