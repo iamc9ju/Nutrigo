@@ -39,10 +39,13 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       user: parsed.username,
       password: parsed.password,
       database: parsed.pathname.split('/')[1],
-      ssl: {
-        rejectUnauthorized: false,
-        servername: hostname,
-      },
+      ssl:
+        parsed.searchParams.get('sslmode') === 'require'
+          ? {
+              rejectUnauthorized: false,
+              servername: hostname,
+            }
+          : undefined,
       connectionTimeoutMillis: 10000,
     });
 

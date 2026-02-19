@@ -85,9 +85,9 @@ services:
       - /app/.next
     env_file:
       - ./nextjs-nutrigo-frontend/.env.local
-    environment:
+    # environment:
       # ส่งค่าให้ Next.js (ต้องระวังเรื่อง Client side/Server side)
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+      # - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:4000}
     depends_on:
       - backend
     networks:

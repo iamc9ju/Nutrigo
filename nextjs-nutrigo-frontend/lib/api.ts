@@ -34,7 +34,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (
         originalRequest.url?.includes("/auth/refresh") ||
-        originalRequest.url?.includes("/auth/login")
+        originalRequest.url?.includes("/auth/login") ||
+        originalRequest.url?.includes("/auth/logout")
       ) {
         return Promise.reject(error);
       }
@@ -63,6 +64,15 @@ api.interceptors.response.use(
       } catch (refreshError) {
         isRefreshing = false;
         onRefreshComplete(false); // บอก request ทั้งหมดว่าล้มเหลว
+        try {
+          await axios.post(
+            `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/auth/logout`,
+            {},
+            { withCredentials: true },
+          );
+        } catch (e) {
+          // ignore
+        }
         window.location.href = "/login";
         return Promise.reject(refreshError);
       }
