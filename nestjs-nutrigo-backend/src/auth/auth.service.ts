@@ -67,55 +67,20 @@ export class AuthService {
   }
 
   async login(dto: LoginDto, ip: string, userAgent: string, deviceId?: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-      include: {
-        patient: true,
-        nutritionist: true,
-      },
-    });
+    const user = await this.validateUser(dto.email, dto.password);
+    const accessToken = this.generateAccessToken(user);
+    const refreshToken = await this.createRefreshToken(
+      user.id,
+      ip,
+      userAgent,
+      deviceId,
+    );
 
-    if (!user) {
-      this.logger.warn(`Failed login attempt - user not found: ${dto.email}`);
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const valid = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!valid) {
-      this.logger.warn(`Failed login attempt - invalid password: ${dto.email}`);
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
+    return {
+      accessToken,
+      refreshToken,
+      user: this.flattenUser(user),
     };
-    const accessToken = this.jwtService.sign(payload, {
-      expiresIn: '15m',
-    });
-
-    const tokenId = crypto.randomUUID();
-    const secret = crypto.randomBytes(32).toString('hex');
-    const refreshToken = `${tokenId}.${secret}`;
-    const secretHash = await bcrypt.hash(secret, 10);
-
-    await this.prisma.refreshToken.create({
-      data: {
-        id: tokenId,
-        userId: user.id,
-        secretHash: secretHash,
-        family: crypto.randomUUID(),
-        deviceId: deviceId,
-        ipAddress: ip || null,
-        userAgent: userAgent,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      },
-    });
-
-    const { passwordHash, ...userData } = user;
-
-    return { accessToken, refreshToken, user: userData };
   }
 
   async refreshAccessToken(
@@ -228,5 +193,91 @@ export class AuthService {
     });
 
     return { message: 'Logged out from all devices' };
+  }
+
+  async getMe(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { patient: true, nutritionist: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return this.flattenUser(user);
+  }
+
+  // Private Helper Methods
+
+  private async validateUser(email: string, pass: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: { patient: true, nutritionist: true },
+    });
+
+    if (!user || !(await bcrypt.compare(pass, user.passwordHash))) {
+      this.logger.warn(`Failed login attempt: ${email}`);
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    return user;
+  }
+
+  private generateAccessToken(user: any) {
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
+    return this.jwtService.sign(payload, { expiresIn: '15m' });
+  }
+
+  private async createRefreshToken(
+    userId: string,
+    ip: string,
+    userAgent: string,
+    deviceId?: string,
+  ) {
+    const tokenId = crypto.randomUUID();
+    const secret = crypto.randomBytes(32).toString('hex');
+    const secretHash = await bcrypt.hash(secret, 10);
+
+    await this.prisma.refreshToken.create({
+      data: {
+        id: tokenId,
+        userId,
+        secretHash,
+        family: crypto.randomUUID(),
+        deviceId,
+        ipAddress: ip || null,
+        userAgent,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    return `${tokenId}.${secret}`;
+  }
+
+  private flattenUser(user: any) {
+    const { id, passwordHash, patient, nutritionist, ...userData } = user;
+
+    let firstName = '';
+    let lastName = '';
+
+    if (user.role === 'patient' && patient) {
+      firstName = patient.firstName;
+      lastName = patient.lastName;
+    } else if (user.role === 'nutritionist' && nutritionist) {
+      firstName = nutritionist.firstName;
+      lastName = nutritionist.lastName;
+    }
+
+    return {
+      userId: id,
+      ...userData,
+      firstName,
+      lastName,
+    };
   }
 }

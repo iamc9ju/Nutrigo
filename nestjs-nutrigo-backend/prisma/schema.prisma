@@ -72,6 +72,7 @@ model Patient {
   deletedAt         DateTime?        @map("deleted_at")
   patientAllergies  PatientAllergy[]
   healthMetrics     HealthMetric[]
+  reviews           Review[]
 
   @@map("patients")
 }
@@ -79,7 +80,6 @@ model Patient {
 model Nutritionist {
   id                 String             @id @default(uuid()) @map("nutritionist_id") @db.Uuid
   userId             String             @unique @map("user_id") @db.Uuid
-  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   firstName          String             @map("first_name") @db.VarChar(100)
   lastName           String             @map("last_name") @db.VarChar(100)
   licenseNumber      String?            @unique @map("license_number") @db.VarChar(50)
@@ -88,7 +88,13 @@ model Nutritionist {
   verificationStatus VerificationStatus @default(pending) @map("verification_status")
   verifiedAt         DateTime?          @map("verified_at")
   verifiedBy         String?            @map("verified_by") @db.Uuid
+  createdAt          DateTime           @default(now()) @map("created_at")
   deletedAt          DateTime?          @map("deleted_at")
+
+  user                    User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nutritionistSpecialties NutritionistSpecialty[]
+  nutritionistSchedules   NutritionistSchedule[]
+  reviews                 Review[]
 
   @@map("nutritionists")
 }
@@ -112,7 +118,6 @@ model HealthMetric {
   patient        Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
   weightKg       Decimal? @map("weight_kg") @db.Decimal(5, 2)
   heightCm       Decimal? @map("height_cm") @db.Decimal(5, 2)
-  bmi            Decimal? @map("bmi") @db.Decimal(5, 2)
   bodyFatPercent Decimal? @map("body_fat_percent") @db.Decimal(4, 1)
   recordedAt     DateTime @default(now()) @map("recorded_at")
 
@@ -137,4 +142,49 @@ model RefreshToken {
   @@index([secretHash])
   @@index([family])
   @@map("refresh_tokens")
+}
+
+model Specialty {
+  id            Int                     @id @default(autoincrement()) @map("specialty_id")
+  name          String                  @db.VarChar(100)
+  description   String?                 @db.Text
+  nutritionists NutritionistSpecialty[]
+
+  @@map("specialties")
+}
+
+model NutritionistSpecialty {
+  nutritionistId String       @map("nutritionist_id") @db.Uuid
+  specialtyId    Int          @map("specialty_id")
+  nutritionist   Nutritionist @relation(fields: [nutritionistId], references: [id], onDelete: Cascade)
+  specialty      Specialty    @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+
+  @@id([nutritionistId, specialtyId])
+  @@map("nutritionist_specialties")
+}
+
+model NutritionistSchedule {
+  id             Int          @id @default(autoincrement()) @map("nutritionist_schedule_id")
+  nutritionistId String       @map("nutritionist_id") @db.Uuid
+  dayOfWeek      Int          @map("day_of_week")
+  startTime      String       @map("start_time") // TIME type
+  endTime        String       @map("end_time")
+  isAvailable    Boolean      @default(true) @map("is_available")
+  nutritionist   Nutritionist @relation(fields: [nutritionistId], references: [id], onDelete: Cascade)
+
+  @@map("nutritionist_schedules")
+}
+
+model Review {
+  id             Int          @id @default(autoincrement()) @map("review_id")
+  appointmentId  String       @unique @map("appointment_id") @db.Uuid
+  patientId      String       @map("patient_id") @db.Uuid
+  nutritionistId String       @map("nutritionist_id") @db.Uuid
+  rating         Int
+  comment        String?      @db.Text
+  createdAt      DateTime     @default(now()) @map("created_at")
+  nutritionist   Nutritionist @relation(fields: [nutritionistId], references: [id], onDelete: Cascade)
+  patient        Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
 }

@@ -3,6 +3,7 @@ import {
   Controller,
   Ip,
   Post,
+  Get,
   Res,
   Req,
   Headers,
@@ -100,7 +101,6 @@ export class AuthController {
     return { message: 'Refreshed successfully' };
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('logout')
   async logout(
     @Req() request: Request,
@@ -120,5 +120,11 @@ export class AuthController {
   @Post('logout-all')
   async logoutAll(@CurrentUser('sub') userId: string) {
     return this.authService.logoutAllDevices(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  async getMe(@CurrentUser('sub') userId: string) {
+    return this.authService.getMe(userId);
   }
 }

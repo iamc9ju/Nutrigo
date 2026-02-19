@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Anuphan } from "next/font/google";
 import "./globals.css";
 import Footer from "@/component/Footer";
+import QueryProvider from "@/providers/QueryProvider";
 
 const anuphan = Anuphan({
   subsets: ["thai", "latin"],
@@ -22,7 +23,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${anuphan.variable} font-sans antialiased`}>
-        {children}
+        <QueryProvider>
+          {children}
+        </QueryProvider>
       </body>
     </html>
   );

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -10,10 +11,12 @@ import { AuthModule } from './auth/auth.module';
 import { PatientsModule } from './patients/patients.module';
 import { HealthMetricsModule } from './health-metrics/health-metrics.module';
 import { AllergiesModule } from './allergies/allergies.module';
+import { NutritionistsModule } from './nutritionists/nutritionists.module';
 
 @Module({
   imports: [
     PrismaModule,
+    ConfigModule.forRoot({ isGlobal: true }),
     MyLoggerModule,
     ThrottlerModule.forRoot({
       throttlers: [
@@ -28,6 +31,7 @@ import { AllergiesModule } from './allergies/allergies.module';
     PatientsModule,
     AllergiesModule,
     HealthMetricsModule,
+    NutritionistsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -35,6 +35,7 @@ export class PatientsService {
     const patient = await this.prisma.patient.findUnique({
       where: { userId },
       include: {
+        user: true,
         patientAllergies: true,
         healthMetrics: {
           orderBy: { recordedAt: 'desc' },
@@ -47,6 +48,21 @@ export class PatientsService {
       throw new NotFoundException('Patient not found');
     }
 
-    return patient;
+    return {
+      userId: patient.userId,
+      patientId: patient.id,
+      email: patient.user.email,
+      role: patient.user.role,
+      firstName: patient.firstName,
+      lastName: patient.lastName,
+      phoneNumber: patient.user.phone,
+      dateOfBirth: patient.dateOfBirth,
+      gender: patient.gender,
+      bloodType: patient.bloodType,
+      chronicDiseases: patient.chronicDiseases,
+      isProfileComplete: patient.isProfileComplete,
+      allergies: patient.patientAllergies,
+      healthMetrics: patient.healthMetrics[0],
+    };
   }
 }

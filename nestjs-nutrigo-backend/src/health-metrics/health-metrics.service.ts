@@ -26,22 +26,13 @@ export class HealthMetricsService {
     return patient.id;
   }
 
-  private calculateBmi(weightKg?: number, heightCm?: number): number | null {
-    if (!weightKg || !heightCm) return null;
-    const heightM = heightCm / 100;
-    const bmi = weightKg / (heightM * heightM);
-    return Math.round(bmi * 100) / 100;
-  }
-
   async create(userId: string, dto: CreateHealthMetricDto) {
     const patientId = await this.getPatientId(userId);
-    const bmi = this.calculateBmi(dto.weightKg, dto.heightCm);
     const metric = await this.prisma.healthMetric.create({
       data: {
         patientId,
         weightKg: dto.weightKg,
         heightCm: dto.heightCm,
-        bmi,
         bodyFatPercent: dto.bodyFatPercent,
       },
     });
@@ -89,14 +80,10 @@ export class HealthMetricsService {
     if (metric.patientId !== patientId) {
       throw new ForbiddenException('Not allowed to update this metric');
     }
-    const newWeight = dto.weightKg ?? Number(metric.weightKg);
-    const newHeight = dto.heightCm ?? Number(metric.heightCm);
-    const bmi = this.calculateBmi(newWeight, newHeight);
     return this.prisma.healthMetric.update({
       where: { id: metricId },
       data: {
         ...dto,
-        bmi,
       },
     });
   }

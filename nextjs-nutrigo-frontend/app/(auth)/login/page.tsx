@@ -8,34 +8,66 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import Swal from 'sweetalert2';
+import { string, z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import axios, { AxiosError } from 'axios';
 
-import { AxiosError } from 'axios';
+interface User {
+    userId: string
+    email: string
+    phone: string
+    role: 'patient' | 'nutritionist' | 'admin'
+    createdAt: string
+    deletedAt: string | null
+    firstName: string
+    lastName: string
+}
+
+interface LoginResponse {
+    user: User
+}
 
 interface ApiErrorResponse {
     message: string;
-}
-interface LoginForm {
-    email: string;
-    password: string;
+    error?: string;
+    statusCode?: number;
 }
 
+const loginSchema = z.object({
+    email: z.string().min(1, 'กรุณากรอกอีเมล').email('รูปแบบอีเมลไม่ถูกต้อง'),
+    password: z.string().min(1, 'กรุณากรอกรหัสผ่าน'),
+})
+type LoginFormInputs = z.infer<typeof loginSchema>;
+
 export default function LoginPage() {
-    const { register, handleSubmit, formState: { errors }, setValue } = useForm<LoginForm>();
-    const [error, setError] = useState('');
+    const { register, handleSubmit, formState: { errors }, setValue } = useForm<LoginFormInputs>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: {
+            email: '',
+            password: '',
+        }
+    });
+    const [error, setError] = useState<String | null>('');
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
+    const [serverError, setServerError] = useState<String | null>('');
     const login = useAuthStore((state) => state.login);
     const router = useRouter();
 
 
-    const onSubmit = async (data: LoginForm) => {
+
+
+    const onSubmit = async (data: LoginFormInputs) => {
         setIsLoading(true);
         setError('');
 
 
         try {
-            const res = await api.post('/auth/login', data);
+            const res = await api.post<LoginResponse>('/auth/login', {
+                email: data.email,
+                password: data.password,
+            });
 
             await Swal.fire({
                 icon: 'success',
@@ -46,7 +78,6 @@ export default function LoginPage() {
                 color: '#3d3522',
                 confirmButtonColor: '#C6E065'
             });
-
             login(res.data.user);
             if (rememberMe) {
                 localStorage.setItem('savedEmail', data.email);
@@ -54,13 +85,17 @@ export default function LoginPage() {
                 localStorage.removeItem('savedEmail');
             }
 
-            router.push('/');
+            router.push('/dashboard');
         } catch (err) {
-            const error = err as AxiosError<ApiErrorResponse>;
-            if (error.response) {
+            let message = 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
 
+            if (axios.isAxiosError(err)) {
+                const errorData = err.response?.data as ApiErrorResponse | undefined;
+                message = errorData?.message || err.message || message;
+            } else if (err instanceof Error) {
+                message = err.message
             }
-            setError(error.response?.data?.message || 'เข้าสู่ระบบไม่สำเร็จ');
+            setServerError(message);
         } finally {
             setIsLoading(false);
         }
@@ -102,7 +137,7 @@ export default function LoginPage() {
                     <div className="relative">
                         <Mail className="absolute left-4 top-[14px] w-5 h-5 text-[#c9b88a]" />
                         <input
-                            {...register('email', { required: 'กรุณากรอกอีเมล' })}
+                            {...register('email')}
                             className="w-full pl-12 pr-4 py-[13px] bg-white rounded-2xl border-2 border-[#f0e6cc] focus:border-[#C6E065] focus:shadow-[0_0_0_3px_rgba(198,224,101,0.15)] outline-none transition-all text-[#3d3522] font-medium placeholder-[#c9b88a] shadow-[0_2px_8px_rgba(180,160,110,0.08)]"
                             placeholder="you@example.com"
                             autoComplete="new-password"
@@ -116,7 +151,7 @@ export default function LoginPage() {
                     <div className="relative">
                         <Lock className="absolute left-4 top-[14px] w-5 h-5 text-[#c9b88a]" />
                         <input
-                            {...register('password', { required: 'กรุณากรอกรหัสผ่าน' })}
+                            {...register('password')}
                             type={showPassword ? 'text' : 'password'}
                             className="w-full pl-12 pr-12 py-[13px] bg-white rounded-2xl border-2 border-[#f0e6cc] focus:border-[#C6E065] focus:shadow-[0_0_0_3px_rgba(198,224,101,0.15)] outline-none transition-all text-[#3d3522] font-medium placeholder-[#c9b88a] shadow-[0_2px_8px_rgba(180,160,110,0.08)]"
                             placeholder="••••••••"
