@@ -13,10 +13,24 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "prepare": "husky install",
+    "check-all": "npm run prisma:generate && turbo run lint && turbo run build && turbo run test",
+    "prisma:generate": "cd nestjs-nutrigo-backend && npx prisma generate"
   },
   "devDependencies": {
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.2",
     "prettier": "^3.0.0",
     "turbo": "^2.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   }
 }
