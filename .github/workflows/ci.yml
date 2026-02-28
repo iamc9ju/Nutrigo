@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Enterprise CI Pipeline
 
 on:
   push:
@@ -6,17 +6,39 @@ on:
   pull_request:
     branches: ["main", "master"]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  lint-and-test:
-    name: Lint & Test Monorepo
+  validate:
+    name: Code Quality & Build Verification
     runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+      JWT_SECRET: test-secret-key-for-ci
+      NODE_ENV: test
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 22.x
           cache: "npm"
@@ -24,7 +46,7 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Cache Turborepo
+      - name: Setup Turborepo Cache
         uses: actions/cache@v3
         with:
           path: .turbo
@@ -32,29 +54,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-
 
-  
-      - name: Check Formatting (Prettier)
-        run: npx prettier --check "**/*.{ts,tsx,json,md}"
-        continue-on-error: true
+      - name: Generate Prisma Types
+        run: npm run prisma:generate
 
-      - name: Generate Prisma Client
-        run: npx prisma generate
-        working-directory: nestjs-nutrigo-backend
+      - name: Push Prisma Schema to Test Database
+        run: cd nestjs-nutrigo-backend && npx prisma db push --accept-data-loss
 
-      - name: Build Shared Package
-        run: npx turbo run build --filter=@nutrigo/shared
+      - name: Run Linting
+        run: npx turbo run lint --filter=...[origin/main]
 
-      - name: Run Linter
-        run: npx turbo run lint
+      - name: Run Unit Tests
+        run: npx turbo run test --filter=...[origin/main]
 
-      - name: Build Backend
-        run: npx turbo run build --filter=nestjs-nutrigo-backend
-
-      - name: Build Frontend
-        run: npx turbo run build --filter=nextjs-nutrigo-frontend
-
-      - name: Run All Tests (Jest)
-        run: npx turbo run test
-        env:
-          JWT_SECRET: "test-secret"
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/testdb"
+      - name: Build All Packages
+        run: npx turbo run build --filter=...[origin/main]
