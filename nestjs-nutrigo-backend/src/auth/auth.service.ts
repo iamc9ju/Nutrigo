@@ -22,14 +22,25 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const exists = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ email: dto.email }, { phone: dto.phone }],
+      },
     });
-    if (exists) {
-      this.logger.warn(
-        `Registration attempt with existing email: ${dto.email}`,
-      );
-      throw new ConflictException('Email already exists');
+
+    if (existingUser) {
+      if (existingUser.email === dto.email) {
+        this.logger.warn(
+          `Registration attempt with existing email: ${dto.email}`,
+        );
+        throw new ConflictException('อีเมลนี้ถูกใช้งานแล้ว');
+      }
+      if (existingUser.phone === dto.phone) {
+        this.logger.warn(
+          `Registration attempt with existing phone: ${dto.phone}`,
+        );
+        throw new ConflictException('phoneNumber Error');
+      }
     }
     const passwordHash = await bcrypt.hash(dto.password, 10);
 

@@ -40,6 +40,7 @@ export default function LoginPage() {
         const savedEmail = localStorage.getItem("savedEmail");
         if (savedEmail) {
             setValue("email", savedEmail);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setRememberMe(true);
         }
     }, [setValue]);
