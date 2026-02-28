@@ -15,51 +15,60 @@ import { UpdateHealthMetricDto } from './dto/update-health-metric.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth-guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
+import { Auth } from 'src/auth/decorators/auth.decorator';
+import { UserRole } from '@prisma/client';
+
 @Controller('patients/health-metrics')
-@UseGuards(JwtAuthGuard)
+@Auth(UserRole.patient)
 export class HealthMetricsController {
   constructor(private healthMetricsService: HealthMetricsService) {}
 
   @Post()
-  create(
+  async create(
     @CurrentUser('sub') userId: string,
     @Body() dto: CreateHealthMetricDto,
   ) {
-    return this.healthMetricsService.create(userId, dto);
+    const data = await this.healthMetricsService.create(userId, dto);
+    return data;
   }
 
   @Get()
-  findAll(@CurrentUser('sub') userId: string) {
-    return this.healthMetricsService.findAll(userId);
+  async findAll(@CurrentUser('sub') userId: string) {
+    const data = await this.healthMetricsService.findAll(userId);
+    return data;
   }
 
   @Get('latest')
-  findLatest(@CurrentUser('sub') userId: string) {
-    return this.healthMetricsService.findLatest(userId);
+  async findLatest(@CurrentUser('sub') userId: string) {
+    const data = await this.healthMetricsService.findLatest(userId);
+    return data;
   }
 
   @Get(':id')
-  findOne(
+  async findOne(
     @CurrentUser('sub') userId: string,
     @Param('id', ParseIntPipe) id: number,
   ) {
-    return this.healthMetricsService.findOne(userId, id);
+    const data = await this.healthMetricsService.findOne(userId, id);
+    return data;
   }
 
   @Patch(':id')
-  update(
+  async update(
     @CurrentUser('sub') userId: string,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateHealthMetricDto,
   ) {
-    return this.healthMetricsService.update(userId, id, dto);
+    const data = await this.healthMetricsService.update(userId, id, dto);
+    return data;
   }
 
   @Delete(':id')
-  remove(
+  async remove(
     @CurrentUser('sub') userId: string,
     @Param('id', ParseIntPipe) id: number,
   ) {
-    return this.healthMetricsService.remove(userId, id);
+    const data = await this.healthMetricsService.remove(userId, id);
+    return data;
   }
 }

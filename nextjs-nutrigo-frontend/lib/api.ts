@@ -1,4 +1,3 @@
-// lib/api.ts
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 
 const api = axios.create({
@@ -7,17 +6,14 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// === Refresh Queue ===
 let isRefreshing = false;
 let refreshSubscribers: ((success: boolean) => void)[] = [];
 
-// เมื่อ refresh เสร็จ → ปล่อย request ทั้งหมดที่รออยู่
 function onRefreshComplete(success: boolean) {
   refreshSubscribers.forEach((callback) => callback(success));
   refreshSubscribers = [];
 }
 
-// เพิ่ม request เข้าคิวรอ
 function addSubscriber(callback: (success: boolean) => void) {
   refreshSubscribers.push(callback);
 }
@@ -39,14 +35,13 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      // ถ้ามีคนอื่นกำลัง refresh อยู่แล้ว → เข้าคิวรอ
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           addSubscriber((success: boolean) => {
             if (success) {
-              resolve(api(originalRequest)); // refresh สำเร็จ → retry
+              resolve(api(originalRequest));
             } else {
-              reject(error); // refresh ล้มเหลว → reject
+              reject(error);
             }
           });
         });
@@ -58,11 +53,11 @@ api.interceptors.response.use(
       try {
         await api.post("/auth/refresh");
         isRefreshing = false;
-        onRefreshComplete(true); // ปล่อย request ทั้งหมดที่รอ
-        return api(originalRequest); // retry request เดิม
+        onRefreshComplete(true);
+        return api(originalRequest);
       } catch (refreshError) {
         isRefreshing = false;
-        onRefreshComplete(false); // บอก request ทั้งหมดว่าล้มเหลว
+        onRefreshComplete(false);
         window.location.href = "/login";
         return Promise.reject(refreshError);
       }

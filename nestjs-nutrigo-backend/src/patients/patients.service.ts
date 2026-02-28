@@ -18,7 +18,7 @@ export class PatientsService {
     }
 
     const updated = await this.prisma.patient.update({
-      where: { id: patient.id },
+      where: { patientId: patient.patientId },
       data: {
         dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
         gender: dto.gender,
@@ -27,8 +27,9 @@ export class PatientsService {
         isProfileComplete: true,
       },
     });
-    this.logger.log(`Patient ${patient.id} completed profile`);
-    return { message: 'Profile completed successfully', patient: updated };
+
+    this.logger.log(`Patient ${patient.patientId} completed profile`);
+    return updated;
   }
 
   async getProfile(userId: string) {
@@ -50,7 +51,7 @@ export class PatientsService {
 
     return {
       userId: patient.userId,
-      patientId: patient.id,
+      patientId: patient.patientId,
       email: patient.user.email,
       role: patient.user.role,
       firstName: patient.firstName,

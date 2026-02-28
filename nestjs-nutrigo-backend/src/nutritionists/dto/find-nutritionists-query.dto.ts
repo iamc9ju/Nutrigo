@@ -12,7 +12,7 @@ export class FindNutritionistsQueryDto {
   search?: string;
   @IsOptional()
   @IsString()
-  specialty?: string; // เช่น 'general_wellness', 'sports_nutrition'
+  specialty?: string;
   @IsOptional()
   @IsEnum(SortBy)
   sortBy?: SortBy = SortBy.HIGHEST_RATED;

@@ -7,6 +7,5 @@ import { PrismaModule } from 'src/prisma/prisma.module';
   imports: [PrismaModule],
   providers: [NutritionistsService],
   controllers: [NutritionistsController],
-  // exports: [NutritionistsService],
 })
 export class NutritionistsModule {}

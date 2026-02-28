@@ -17,12 +17,12 @@ export class AllergiesService {
   private async getPatientId(userId: string): Promise<string> {
     const patient = await this.prisma.patient.findUnique({
       where: { userId },
-      select: { id: true },
+      select: { patientId: true },
     });
     if (!patient) {
       throw new NotFoundException('Patient not found');
     }
-    return patient.id;
+    return patient.patientId;
   }
 
   async create(userId: string, dto: CreateAllergyDto) {
@@ -37,7 +37,9 @@ export class AllergiesService {
       },
     });
 
-    this.logger.log(`Created allergy ${allergy.id} for patient ${patientId}`);
+    this.logger.log(
+      `Created allergy ${allergy.patientAllergyId} for patient ${patientId}`,
+    );
     return allergy;
   }
 
@@ -52,7 +54,7 @@ export class AllergiesService {
   async findOne(userId: string, allergyId: number) {
     const patientId = await this.getPatientId(userId);
     const allergy = await this.prisma.patientAllergy.findUnique({
-      where: { id: allergyId },
+      where: { patientAllergyId: allergyId },
     });
     if (!allergy || allergy.patientId !== patientId) {
       throw new NotFoundException('Allergy not found');
@@ -63,7 +65,7 @@ export class AllergiesService {
   async update(userId: string, allergyId: number, dto: UpdateAllergyDto) {
     const patientId = await this.getPatientId(userId);
     const allergy = await this.prisma.patientAllergy.findUnique({
-      where: { id: allergyId },
+      where: { patientAllergyId: allergyId },
     });
     if (!allergy) {
       throw new NotFoundException('Allergy not found');
@@ -72,7 +74,7 @@ export class AllergiesService {
       throw new ForbiddenException('Not allowed to update this allergy');
     }
     return this.prisma.patientAllergy.update({
-      where: { id: allergyId },
+      where: { patientAllergyId: allergyId },
       data: dto,
     });
   }
@@ -80,7 +82,7 @@ export class AllergiesService {
   async remove(userId: string, allergyId: number) {
     const patientId = await this.getPatientId(userId);
     const allergy = await this.prisma.patientAllergy.findUnique({
-      where: { id: allergyId },
+      where: { patientAllergyId: allergyId },
     });
     if (!allergy) {
       throw new NotFoundException('Allergy not found');
@@ -89,8 +91,7 @@ export class AllergiesService {
       throw new ForbiddenException('Not allowed to delete this allergy');
     }
     await this.prisma.patientAllergy.delete({
-      where: { id: allergyId },
+      where: { patientAllergyId: allergyId },
     });
-    return { message: 'Allergy deleted successfully' };
   }
 }

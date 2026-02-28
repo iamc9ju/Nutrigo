@@ -5,7 +5,9 @@ import {
   SortBy,
 } from './dto/find-nutritionists-query.dto';
 import { Prisma, VerificationStatus } from '@prisma/client';
-// import { contains } from 'class-validator';
+import { addMinutes, format, getDay, isAfter, parseISO } from 'date-fns';
+import { CreateScheduleDto } from './dto/create-schedule.dto';
+import { CreateLeaveDto } from './dto/create-leave.dto';
 
 @Injectable()
 export class NutritionistsService {
@@ -44,14 +46,14 @@ export class NutritionistsService {
         break;
     }
 
-    const [nutritionist, total] = await Promise.all([
+    const [nutritionists, total] = await Promise.all([
       this.prisma.nutritionist.findMany({
         where,
         skip,
         take: limit,
         orderBy,
         select: {
-          id: true,
+          nutritionistId: true,
           firstName: true,
           lastName: true,
           licenseNumber: true,
@@ -63,15 +65,35 @@ export class NutritionistsService {
             },
           },
           nutritionistSpecialties: {
-            select: { specialty: { select: { id: true, name: true } } },
+            select: {
+              specialty: { select: { specialtyId: true, name: true } },
+            },
+          },
+          reviews: {
+            select: { rating: true },
           },
         },
       }),
       this.prisma.nutritionist.count({ where }),
     ]);
 
+    const formattedNutritionists = nutritionists.map((nutri) => {
+      const totalReviews = nutri.reviews.length;
+      const avgRating =
+        totalReviews > 0
+          ? nutri.reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+          : 0;
+
+      const { reviews, ...rest } = nutri;
+      return {
+        ...rest,
+        avgRating,
+        totalReviews,
+      };
+    });
+
     return {
-      data: nutritionist,
+      data: formattedNutritionists,
       meta: {
         total,
         page,
@@ -81,11 +103,11 @@ export class NutritionistsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(nutritionistId: string) {
     const nutritionist = await this.prisma.nutritionist.findUnique({
-      where: { id },
+      where: { nutritionistId },
       select: {
-        id: true,
+        nutritionistId: true,
         firstName: true,
         lastName: true,
         licenseNumber: true,
@@ -95,7 +117,7 @@ export class NutritionistsService {
           select: { email: true },
         },
         nutritionistSpecialties: {
-          select: { specialty: { select: { id: true, name: true } } },
+          select: { specialty: { select: { specialtyId: true, name: true } } },
         },
         nutritionistSchedules: {
           where: { isAvailable: true },
@@ -129,5 +151,180 @@ export class NutritionistsService {
       avgRating,
       totalReviews: nutritionist.reviews.length,
     };
+  }
+
+  async getAvailability(nutritionistId: string, dateString: string) {
+    const nutritionist = await this.prisma.nutritionist.findUnique({
+      where: {
+        nutritionistId,
+        verificationStatus: 'approved',
+      },
+    });
+    if (!nutritionist) {
+      throw new NotFoundException(
+        'ไม่พบนักโภชนาการ หรือยังไม่ได้รับการอนุมัติ',
+      );
+    }
+    const requestDayOfWeek = getDay(parseISO(dateString));
+
+    const start = new Date(`${dateString}T00:00:00.000+07:00`);
+    const end = new Date(`${dateString}T23:59:59.999+07:00`);
+
+    const existingLeave = await this.prisma.nutritionistLeave.findFirst({
+      where: {
+        nutritionistId,
+        leaveDate: {
+          gte: start,
+          lte: end,
+        },
+      },
+    });
+
+    if (existingLeave && existingLeave.isFullDay) {
+      return [];
+    }
+
+    let startTimeString: string;
+    let endTimeString: string;
+
+    if (existingLeave && !existingLeave.isFullDay) {
+      if (!existingLeave.newStartTime || !existingLeave.newEndTime) {
+        return [];
+      }
+      startTimeString = existingLeave.newStartTime;
+      endTimeString = existingLeave.newEndTime;
+    } else {
+      const schedule = await this.prisma.nutritionistSchedule.findFirst({
+        where: {
+          nutritionistId,
+          dayOfWeek: requestDayOfWeek,
+          isAvailable: true,
+        },
+      });
+
+      if (!schedule) {
+        return [];
+      }
+
+      startTimeString = schedule.startTime;
+      endTimeString = schedule.endTime;
+    }
+
+    const actualStartDateTime = parseISO(`${dateString}T${startTimeString}:00`);
+    const actualEndDateTime = parseISO(`${dateString}T${endTimeString}:00`);
+    const consultationDurationMinutes = 60;
+    const allSlots: {
+      time: string;
+      startDateTime: Date;
+      endDateTime: Date;
+    }[] = [];
+    let currentSlot = actualStartDateTime;
+    while (
+      isAfter(
+        actualEndDateTime,
+        addMinutes(currentSlot, consultationDurationMinutes - 1),
+      )
+    ) {
+      const nextSlot = addMinutes(currentSlot, consultationDurationMinutes);
+      allSlots.push({
+        time: format(currentSlot, 'HH:mm'),
+        startDateTime: currentSlot,
+        endDateTime: nextSlot,
+      });
+      currentSlot = nextSlot;
+    }
+    const existingAppointments = await this.prisma.appointment.findMany({
+      where: {
+        nutritionistId,
+        startTime: {
+          gte: start,
+          lte: end,
+        },
+        status: {
+          in: ['pending', 'confirmed'],
+        },
+      },
+      select: {
+        startTime: true,
+        endTime: true,
+      },
+    });
+
+    const finalSlots = allSlots.map((slot) => {
+      const isBooked = existingAppointments.some((appt) => {
+        return appt.startTime.getTime() === slot.startDateTime.getTime();
+      });
+
+      return {
+        time: slot.time,
+        available: !isBooked,
+      };
+    });
+
+    return finalSlots;
+  }
+
+  async createSchedule(userId: string, dto: CreateScheduleDto) {
+    const nutritionist = await this.prisma.nutritionist.findUnique({
+      where: { userId },
+    });
+
+    if (!nutritionist) {
+      throw new NotFoundException('คุณไม่ได้ลงทะเบียนเป็นนักโภชนาการ');
+    }
+
+    return this.prisma.nutritionistSchedule.upsert({
+      where: {
+        nutritionistId_dayOfWeek: {
+          nutritionistId: nutritionist.nutritionistId,
+          dayOfWeek: dto.dayOfWeek,
+        },
+      },
+      update: {
+        startTime: dto.startTime,
+        endTime: dto.endTime,
+        isAvailable: dto.isAvailable ?? true,
+      },
+      create: {
+        nutritionistId: nutritionist.nutritionistId,
+        dayOfWeek: dto.dayOfWeek,
+        startTime: dto.startTime,
+        endTime: dto.endTime,
+        isAvailable: dto.isAvailable ?? true,
+      },
+    });
+  }
+
+  async createLeave(userId: string, dto: CreateLeaveDto) {
+    const nutritionist = await this.prisma.nutritionist.findUnique({
+      where: { userId },
+    });
+
+    if (!nutritionist) {
+      throw new NotFoundException('คุณไม่ได้ลงทะเบียนเป็นนักโภชนาการ');
+    }
+
+    const leaveDate = new Date(`${dto.leaveDate}T00:00:00.000Z`);
+
+    return this.prisma.nutritionistLeave.upsert({
+      where: {
+        nutritionistId_leaveDate: {
+          nutritionistId: nutritionist.nutritionistId,
+          leaveDate: leaveDate,
+        },
+      },
+      update: {
+        isFullDay: dto.isFullDay ?? true,
+        newStartTime: dto.newStartTime,
+        newEndTime: dto.newEndTime,
+      },
+      create: {
+        nutritionistId: nutritionist.nutritionistId,
+        leaveDate: leaveDate,
+        isFullDay: dto.isFullDay ?? true,
+        newStartTime: dto.newStartTime,
+        newEndTime: dto.newEndTime,
+      },
+    });
   }
 }

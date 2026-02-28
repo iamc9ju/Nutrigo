@@ -1,22 +1,25 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth-guard';
 import { PatientsService } from './patients.service';
 import { CompleteProfileDto } from './dto/complete-profile.dto';
-import type { Request } from 'express';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { Auth } from 'src/auth/decorators/auth.decorator';
+import { UserRole } from '@prisma/client';
 
 @Controller('patients')
-@UseGuards(JwtAuthGuard)
+@Auth(UserRole.patient)
 export class PatientsController {
   constructor(private patientsService: PatientsService) {}
   @Post('complete-profile')
-  completeProfile(@Body() dto: CompleteProfileDto, @Req() req: Request) {
-    const userId = req.user!['sub'];
-    return this.patientsService.completeProfile(userId, dto);
+  async completeProfile(
+    @Body() dto: CompleteProfileDto,
+    @CurrentUser('sub') userId: string,
+  ) {
+    const data = await this.patientsService.completeProfile(userId, dto);
+    return data;
   }
-
   @Get('profile')
-  getProfile(@Req() req: Request) {
-    const userId = req.user!['sub'];
-    return this.patientsService.getProfile(userId);
+  async getProfile(@CurrentUser('sub') userId: string) {
+    const data = await this.patientsService.getProfile(userId);
+    return data;
   }
 }

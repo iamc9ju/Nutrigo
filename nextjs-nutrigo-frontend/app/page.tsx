@@ -1,14 +1,14 @@
-import Navbar from "@/component/Navbar";
-import Hero from "@/component/Hero";
+import Navbar from '@/components/Navbar';
+import Hero from '@/components/Hero';
 
-import KeyFeatures from "@/component/KeyFeatures";
-import HowItWorks from "@/component/HowItWorks";
-import Testimonials from "@/component/Testimonials";
-import NutritionistList from "@/component/NutritionistList";
-import FAQ from "@/component/FAQ";
-import CallToAction from "@/component/CallToAction";
-import Footer from "@/component/Footer";
-import FadeInSection from "@/component/FadeInSection";
+import KeyFeatures from '@/components/KeyFeatures';
+import HowItWorks from '@/components/HowItWorks';
+import Testimonials from '@/components/Testimonials';
+import NutritionistList from '@/components/NutritionistList';
+import FAQ from '@/components/FAQ';
+import CallToAction from '@/components/CallToAction';
+import Footer from '@/components/Footer';
+import FadeInSection from '@/components/FadeInSection';
 
 export default function Home() {
   return (
@@ -29,5 +29,5 @@ export default function Home() {
       </FadeInSection>
       <Footer></Footer>
     </main>
-  )
+  );
 }

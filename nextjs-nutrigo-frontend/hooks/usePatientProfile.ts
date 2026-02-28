@@ -28,13 +28,12 @@ export const usePatientProfile = () => {
     queryKey: ["patient-profile"],
     queryFn: async () => {
       const { data } = await api.get("/patients/profile");
-      return data;
+      return data.data;
     },
-    enabled: true, // หรือใส่เงื่อนไขให้ดึงเมื่อ Login แล้ว
+    enabled: true,
   });
 };
 
-// Hook สำหรับอัปเดตข้อมูล (WRITE) -> อัปเดตเสร็จสั่ง Refetch อัตโนมัติ
 export const useUpdateHealthMetrics = () => {
   const queryClient = useQueryClient();
 
@@ -43,7 +42,6 @@ export const useUpdateHealthMetrics = () => {
       return await api.post("/patients/health-metrics", payload);
     },
     onSuccess: () => {
-      // Key นี้สำคัญมาก มันจะไปบอก usePatientProfile ให้ดึงข้อมูลใหม่ทันที
       queryClient.invalidateQueries({ queryKey: ["patient-profile"] });
     },
   });

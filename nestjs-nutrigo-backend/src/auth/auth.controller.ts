@@ -35,13 +35,7 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
     @Headers('x-device-id') deviceId?: string,
   ) {
-    const { accessToken, refreshToken, user } = await this.authService.login(
-      dto,
-      ip,
-      userAgent,
-      deviceId,
-    );
-
+    const data = await this.authService.login(dto, ip, userAgent, deviceId);
     const cookieOptines = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -49,16 +43,16 @@ export class AuthController {
       path: '/',
     };
 
-    response.cookie('accessToken', accessToken, {
+    response.cookie('accessToken', data.accessToken, {
       ...cookieOptines,
       maxAge: 15 * 60 * 1000,
     });
-    response.cookie('refreshToken', refreshToken, {
+    response.cookie('refreshToken', data.refreshToken, {
       ...cookieOptines,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return { user };
+    return data.user;
   }
 
   @Post('refresh')
@@ -98,7 +92,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return { message: 'Refreshed successfully' };
+    return null;
   }
 
   @Post('logout')
@@ -114,6 +108,8 @@ export class AuthController {
     if (refreshToken) {
       await this.authService.logout(refreshToken);
     }
+
+    return null;
   }
 
   @UseGuards(JwtAuthGuard)
@@ -125,6 +121,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async getMe(@CurrentUser('sub') userId: string) {
-    return this.authService.getMe(userId);
+    const data = await this.authService.getMe(userId);
+    return data;
   }
 }

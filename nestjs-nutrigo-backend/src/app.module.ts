@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import * as Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { MyLoggerModule } from './my-logger/my-logger.module';
 import { HealthModule } from './health/health.module';
@@ -12,11 +13,20 @@ import { PatientsModule } from './patients/patients.module';
 import { HealthMetricsModule } from './health-metrics/health-metrics.module';
 import { AllergiesModule } from './allergies/allergies.module';
 import { NutritionistsModule } from './nutritionists/nutritionists.module';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
     PrismaModule,
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validationSchema: Joi.object({
+        DATABASE_URL: Joi.string().required(),
+        JWT_SECRET: Joi.string().required(),
+        PORT: Joi.number().default(4000),
+        FRONTEND_URL: Joi.string().default('http://localhost:3000'),
+      }),
+    }),
     MyLoggerModule,
     ThrottlerModule.forRoot({
       throttlers: [
@@ -34,6 +44,12 @@ import { NutritionistsModule } from './nutritionists/nutritionists.module';
     NutritionistsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

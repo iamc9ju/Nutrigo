@@ -10,6 +10,7 @@ import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import * as crypto from 'crypto';
+import { User, UserWithRelation } from './interface/user';
 
 @Injectable()
 export class AuthService {
@@ -44,7 +45,7 @@ export class AuthService {
       if (dto.role === 'patient') {
         await tx.patient.create({
           data: {
-            userId: user.id,
+            userId: user.userId,
             firstName: dto.firstName,
             lastName: dto.lastName,
           },
@@ -52,7 +53,7 @@ export class AuthService {
       } else if (dto.role === 'nutritionist') {
         await tx.nutritionist.create({
           data: {
-            userId: user.id,
+            userId: user.userId,
             firstName: dto.firstName,
             lastName: dto.lastName,
           },
@@ -62,15 +63,17 @@ export class AuthService {
       return user;
     });
 
-    this.logger.log(`New ${dto.role} registered: ${result.id} (${dto.email})`);
-    return { message: 'Registration successful', userId: result.id };
+    this.logger.log(
+      `New ${dto.role} registered: ${result.userId} (${dto.email})`,
+    );
+    return { message: 'Registration successful', userId: result.userId };
   }
 
   async login(dto: LoginDto, ip: string, userAgent: string, deviceId?: string) {
     const user = await this.validateUser(dto.email, dto.password);
     const accessToken = this.generateAccessToken(user);
     const refreshToken = await this.createRefreshToken(
-      user.id,
+      user.userId,
       ip,
       userAgent,
       deviceId,
@@ -96,7 +99,7 @@ export class AuthService {
     }
 
     const token = await this.prisma.refreshToken.findUnique({
-      where: { id: tokenId },
+      where: { refreshTokenId: tokenId },
       include: { user: true },
     });
 
@@ -132,13 +135,13 @@ export class AuthService {
     const newSecretHash = await bcrypt.hash(newSecret, 10);
     await this.prisma.$transaction(async (tx) => {
       await tx.refreshToken.update({
-        where: { id: tokenId },
+        where: { refreshTokenId: tokenId },
         data: { usedAt: new Date() },
       });
 
       await tx.refreshToken.create({
         data: {
-          id: newTokenId,
+          refreshTokenId: newTokenId,
           userId: token.userId,
           secretHash: newSecretHash,
           family: token.family,
@@ -151,7 +154,7 @@ export class AuthService {
     });
 
     const payload = {
-      sub: token.user.id,
+      sub: token.user.userId,
       email: token.user.email,
       role: token.user.role,
     };
@@ -166,7 +169,7 @@ export class AuthService {
     }
 
     const token = await this.prisma.refreshToken.findUnique({
-      where: { id: tokenId },
+      where: { refreshTokenId: tokenId },
     });
 
     if (!token || token.revokedAt) {
@@ -176,7 +179,7 @@ export class AuthService {
     const isValid = await bcrypt.compare(secret, token.secretHash);
     if (isValid) {
       await this.prisma.refreshToken.update({
-        where: { id: tokenId },
+        where: { refreshTokenId: tokenId },
         data: { revokedAt: new Date() },
       });
     }
@@ -196,9 +199,21 @@ export class AuthService {
   }
 
   async getMe(userId: string) {
+    const userBase = await this.prisma.user.findUnique({
+      where: { userId },
+      select: { role: true },
+    });
+
+    if (!userBase) {
+      throw new UnauthorizedException('User not found');
+    }
+
     const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { patient: true, nutritionist: true },
+      where: { userId },
+      include: {
+        patient: userBase.role === 'patient',
+        nutritionist: userBase.role === 'nutritionist',
+      },
     });
 
     if (!user) {
@@ -208,8 +223,6 @@ export class AuthService {
     return this.flattenUser(user);
   }
 
-  // Private Helper Methods
-
   private async validateUser(email: string, pass: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
@@ -218,7 +231,7 @@ export class AuthService {
 
     if (!user || !(await bcrypt.compare(pass, user.passwordHash))) {
       this.logger.warn(`Failed login attempt: ${email}`);
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
     }
 
     return user;
@@ -226,7 +239,7 @@ export class AuthService {
 
   private generateAccessToken(user: any) {
     const payload = {
-      sub: user.id,
+      sub: user.userId,
       email: user.email,
       role: user.role,
     };
@@ -245,7 +258,7 @@ export class AuthService {
 
     await this.prisma.refreshToken.create({
       data: {
-        id: tokenId,
+        refreshTokenId: tokenId,
         userId,
         secretHash,
         family: crypto.randomUUID(),
@@ -259,25 +272,38 @@ export class AuthService {
     return `${tokenId}.${secret}`;
   }
 
-  private flattenUser(user: any) {
-    const { id, passwordHash, patient, nutritionist, ...userData } = user;
+  private flattenUser(user: UserWithRelation) {
+    const {
+      userId,
+      phone,
+      email,
+      role,
+      is2faEnabled,
+      createdAt,
+      patient,
+      nutritionist,
+    } = user;
 
     let firstName = '';
     let lastName = '';
 
-    if (user.role === 'patient' && patient) {
+    if (role === 'patient' && patient) {
       firstName = patient.firstName;
       lastName = patient.lastName;
-    } else if (user.role === 'nutritionist' && nutritionist) {
+    } else if (role === 'nutritionist' && nutritionist) {
       firstName = nutritionist.firstName;
       lastName = nutritionist.lastName;
     }
 
     return {
-      userId: id,
-      ...userData,
+      userId,
+      phone,
+      email,
       firstName,
       lastName,
+      role,
+      is2faEnabled,
+      createdAt,
     };
   }
 }

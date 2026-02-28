@@ -17,13 +17,13 @@ export class HealthMetricsService {
   private async getPatientId(userId: string): Promise<string> {
     const patient = await this.prisma.patient.findUnique({
       where: { userId },
-      select: { id: true },
+      select: { patientId: true },
     });
 
     if (!patient) {
       throw new NotFoundException('Patient not found');
     }
-    return patient.id;
+    return patient.patientId;
   }
 
   async create(userId: string, dto: CreateHealthMetricDto) {
@@ -37,7 +37,7 @@ export class HealthMetricsService {
       },
     });
     this.logger.log(
-      `Created health metric ${metric.id} for patient ${patientId}`,
+      `Created health metric ${metric.healthMetricId} for patient ${patientId}`,
     );
     return metric;
   }
@@ -61,7 +61,7 @@ export class HealthMetricsService {
   async findOne(userId: string, metricId: number) {
     const patientId = await this.getPatientId(userId);
     const metric = await this.prisma.healthMetric.findUnique({
-      where: { id: metricId },
+      where: { healthMetricId: metricId },
     });
     if (!metric || metric.patientId !== patientId) {
       throw new NotFoundException('Health metric not found');
@@ -72,7 +72,7 @@ export class HealthMetricsService {
   async update(userId: string, metricId: number, dto: UpdateHealthMetricDto) {
     const patientId = await this.getPatientId(userId);
     const metric = await this.prisma.healthMetric.findUnique({
-      where: { id: metricId },
+      where: { healthMetricId: metricId },
     });
     if (!metric) {
       throw new NotFoundException('Health metric not found');
@@ -81,7 +81,7 @@ export class HealthMetricsService {
       throw new ForbiddenException('Not allowed to update this metric');
     }
     return this.prisma.healthMetric.update({
-      where: { id: metricId },
+      where: { healthMetricId: metricId },
       data: {
         ...dto,
       },
@@ -91,7 +91,7 @@ export class HealthMetricsService {
   async remove(userId: string, metricId: number) {
     const patientId = await this.getPatientId(userId);
     const metric = await this.prisma.healthMetric.findUnique({
-      where: { id: metricId },
+      where: { healthMetricId: metricId },
     });
     if (!metric) {
       throw new NotFoundException('Health metric not found');
@@ -100,7 +100,7 @@ export class HealthMetricsService {
       throw new ForbiddenException('Not allowed to delete this metric');
     }
     await this.prisma.healthMetric.delete({
-      where: { id: metricId },
+      where: { healthMetricId: metricId },
     });
     return { message: 'Health metric deleted successfully' };
   }

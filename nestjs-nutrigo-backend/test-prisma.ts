@@ -36,7 +36,7 @@ async function main() {
 
     console.log('✅ User created successfully:', user);
 
-    await prisma.user.delete({ where: { id: user.id } });
+    await prisma.user.delete({ where: { userId: user.userId } });
     console.log('✅ User deleted successfully');
   } catch (error) {
     console.error('❌ Error:', error);

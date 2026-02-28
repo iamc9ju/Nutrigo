@@ -37,8 +37,19 @@ enum VerificationStatus {
   rejected
 }
 
+enum AppointmentType {
+  online
+}
+
+enum AppointmentStatus {
+  pending
+  confirmed
+  completed
+  cancelled
+}
+
 model User {
-  id           String    @id @default(uuid()) @map("user_id") @db.Uuid
+  userId       String    @id @default(uuid()) @map("user_id") @db.Uuid
   email        String    @unique @map("email") @db.VarChar(100)
   passwordHash String    @map("password_hash") @db.VarChar(255)
   phone        String?   @unique @map("phone") @db.VarChar(20)
@@ -59,9 +70,9 @@ model User {
 }
 
 model Patient {
-  id                String           @id @default(uuid()) @map("patient_id") @db.Uuid
+  patientId         String           @id @default(uuid()) @map("patient_id") @db.Uuid
   userId            String           @unique @map("user_id") @db.Uuid
-  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User             @relation(fields: [userId], references: [userId], onDelete: Cascade)
   firstName         String           @map("first_name") @db.VarChar(100)
   lastName          String           @map("last_name") @db.VarChar(100)
   dateOfBirth       DateTime?        @map("date_of_birth") @db.Date
@@ -73,12 +84,13 @@ model Patient {
   patientAllergies  PatientAllergy[]
   healthMetrics     HealthMetric[]
   reviews           Review[]
+  appointments      Appointment[]
 
   @@map("patients")
 }
 
 model Nutritionist {
-  id                 String             @id @default(uuid()) @map("nutritionist_id") @db.Uuid
+  nutritionistId     String             @id @default(uuid()) @map("nutritionist_id") @db.Uuid
   userId             String             @unique @map("user_id") @db.Uuid
   firstName          String             @map("first_name") @db.VarChar(100)
   lastName           String             @map("last_name") @db.VarChar(100)
@@ -91,31 +103,33 @@ model Nutritionist {
   createdAt          DateTime           @default(now()) @map("created_at")
   deletedAt          DateTime?          @map("deleted_at")
 
-  user                    User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                    User                    @relation(fields: [userId], references: [userId], onDelete: Cascade)
   nutritionistSpecialties NutritionistSpecialty[]
   nutritionistSchedules   NutritionistSchedule[]
   reviews                 Review[]
+  appointments            Appointment[]
+  nutritionistLeaves      NutritionistLeave[]
 
   @@map("nutritionists")
 }
 
 model PatientAllergy {
-  id             Int             @id @default(autoincrement()) @map("patient_allergy_id")
-  patientId      String          @map("patient_id") @db.Uuid
-  patient        Patient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  ingredientName String          @map("ingredient_name") @db.VarChar(100)
-  severity       AllergySeverity @default(moderate) @map("severity")
-  note           String?         @map("note") @db.Text
-  createdAt      DateTime        @default(now()) @map("created_at")
+  patientAllergyId Int             @id @default(autoincrement()) @map("patient_allergy_id")
+  patientId        String          @map("patient_id") @db.Uuid
+  patient          Patient         @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+  ingredientName   String          @map("ingredient_name") @db.VarChar(100)
+  severity         AllergySeverity @default(moderate) @map("severity")
+  note             String?         @map("note") @db.Text
+  createdAt        DateTime        @default(now()) @map("created_at")
 
   @@index([patientId])
   @@map("patient_allergies")
 }
 
 model HealthMetric {
-  id             Int      @id @default(autoincrement()) @map("health_metric_id")
+  healthMetricId Int      @id @default(autoincrement()) @map("health_metric_id")
   patientId      String   @map("patient_id") @db.Uuid
-  patient        Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient        Patient  @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
   weightKg       Decimal? @map("weight_kg") @db.Decimal(5, 2)
   heightCm       Decimal? @map("height_cm") @db.Decimal(5, 2)
   bodyFatPercent Decimal? @map("body_fat_percent") @db.Decimal(4, 1)
@@ -125,18 +139,18 @@ model HealthMetric {
 }
 
 model RefreshToken {
-  id         String    @id @default(uuid()) @map("refresh_token_id") @db.Uuid
-  userId     String    @map("user_id") @db.Uuid
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  secretHash String    @unique @map("token_hash") @db.VarChar(255)
-  deviceId   String?   @map("device_id") @db.VarChar(255)
-  usedAt     DateTime? @map("used_at")
-  ipAddress  String?   @map("ip_address") @db.VarChar(45)
-  userAgent  String?   @map("user_agent") @db.Text
-  expiresAt  DateTime  @map("expires_at")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  revokedAt  DateTime? @map("revoked_at")
-  family     String?   @map("family") @db.Uuid
+  refreshTokenId String    @id @default(uuid()) @map("refresh_token_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  user           User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  secretHash     String    @unique @map("token_hash") @db.VarChar(255)
+  deviceId       String?   @map("device_id") @db.VarChar(255)
+  usedAt         DateTime? @map("used_at")
+  ipAddress      String?   @map("ip_address") @db.VarChar(45)
+  userAgent      String?   @map("user_agent") @db.Text
+  expiresAt      DateTime  @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  revokedAt      DateTime? @map("revoked_at")
+  family         String?   @map("family") @db.Uuid
 
   @@index([userId])
   @@index([secretHash])
@@ -145,7 +159,7 @@ model RefreshToken {
 }
 
 model Specialty {
-  id            Int                     @id @default(autoincrement()) @map("specialty_id")
+  specialtyId   Int                     @id @default(autoincrement()) @map("specialty_id")
   name          String                  @db.VarChar(100)
   description   String?                 @db.Text
   nutritionists NutritionistSpecialty[]
@@ -156,35 +170,65 @@ model Specialty {
 model NutritionistSpecialty {
   nutritionistId String       @map("nutritionist_id") @db.Uuid
   specialtyId    Int          @map("specialty_id")
-  nutritionist   Nutritionist @relation(fields: [nutritionistId], references: [id], onDelete: Cascade)
-  specialty      Specialty    @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+  nutritionist   Nutritionist @relation(fields: [nutritionistId], references: [nutritionistId], onDelete: Cascade)
+  specialty      Specialty    @relation(fields: [specialtyId], references: [specialtyId], onDelete: Cascade)
 
   @@id([nutritionistId, specialtyId])
   @@map("nutritionist_specialties")
 }
 
 model NutritionistSchedule {
-  id             Int          @id @default(autoincrement()) @map("nutritionist_schedule_id")
-  nutritionistId String       @map("nutritionist_id") @db.Uuid
-  dayOfWeek      Int          @map("day_of_week")
-  startTime      String       @map("start_time") // TIME type
-  endTime        String       @map("end_time")
-  isAvailable    Boolean      @default(true) @map("is_available")
-  nutritionist   Nutritionist @relation(fields: [nutritionistId], references: [id], onDelete: Cascade)
+  nutritionistScheduleId Int          @id @default(autoincrement()) @map("nutritionist_schedule_id")
+  nutritionistId         String       @map("nutritionist_id") @db.Uuid
+  dayOfWeek              Int          @map("day_of_week")
+  startTime              String       @map("start_time") // TIME type
+  endTime                String       @map("end_time")
+  isAvailable            Boolean      @default(true) @map("is_available")
+  nutritionist           Nutritionist @relation(fields: [nutritionistId], references: [nutritionistId], onDelete: Cascade)
 
+  @@unique([nutritionistId, dayOfWeek])
   @@map("nutritionist_schedules")
 }
 
+model NutritionistLeave {
+  nutritionistLeaveId Int      @id @default(autoincrement()) @map("nutritionist_leave_id")
+  nutritionistId      String   @map("nutritionist_id") @db.Uuid
+  leaveDate           DateTime @map("leave_date") @db.Date
+
+  isFullDay    Boolean @default(true) @map("is_full_day")
+  newStartTime String? @map("new_start_time")
+  newEndTime   String? @map("new_end_time")
+
+  nutritionist Nutritionist @relation(fields: [nutritionistId], references: [nutritionistId], onDelete: Cascade)
+
+  @@unique([nutritionistId, leaveDate])
+  @@map("nutritionist_leaves")
+}
+
 model Review {
-  id             Int          @id @default(autoincrement()) @map("review_id")
+  reviewId       Int          @id @default(autoincrement()) @map("review_id")
   appointmentId  String       @unique @map("appointment_id") @db.Uuid
   patientId      String       @map("patient_id") @db.Uuid
   nutritionistId String       @map("nutritionist_id") @db.Uuid
   rating         Int
   comment        String?      @db.Text
   createdAt      DateTime     @default(now()) @map("created_at")
-  nutritionist   Nutritionist @relation(fields: [nutritionistId], references: [id], onDelete: Cascade)
-  patient        Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  nutritionist   Nutritionist @relation(fields: [nutritionistId], references: [nutritionistId], onDelete: Cascade)
+  patient        Patient      @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
 
   @@map("reviews")
+}
+
+model Appointment {
+  appointmentId  String            @id @default(uuid()) @map("appointment_id") @db.Uuid
+  patientId      String            @map("patient_id") @db.Uuid
+  patient        Patient           @relation(fields: [patientId], references: [patientId], onDelete: Restrict)
+  nutritionistId String            @map("nutritionist_id") @db.Uuid
+  nutritionist   Nutritionist      @relation(fields: [nutritionistId], references: [nutritionistId], onDelete: Restrict)
+  startTime      DateTime          @map("start_time")
+  endTime        DateTime          @map("end_time")
+  status         AppointmentStatus @default(pending)
+  type           AppointmentType   @default(online)
+  createdAt      DateTime          @default(now()) @map("created_at")
+  deletedAt      DateTime?         @map("deleted_at")
 }
