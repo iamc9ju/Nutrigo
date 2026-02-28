@@ -15,7 +15,7 @@ export interface CreateLeavePayload {
 }
 
 export const nutritionistApi = {
-  getNutritionists: async (params?: Record<string, any>) => {
+  getNutritionists: async (params?: Record<string, unknown>) => {
     const response = await api.get("/nutritionists", { params });
     return response.data;
   },

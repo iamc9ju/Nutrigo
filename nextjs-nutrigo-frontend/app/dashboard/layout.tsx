@@ -40,13 +40,15 @@ export default async function DashboardLayout({
         user = json.data;
       } else {
       }
-    } catch (error) {}
+    } catch {
+      // ignore
+    }
   }
 
   return (
     <div className="min-h-screen bg-[#FFFBF2] relative overflow-hidden">
       <BackgroundPattern />
-      {}
+      { }
       <AuthInitializer user={user} />
 
       <Sidebar />

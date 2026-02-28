@@ -16,7 +16,6 @@ export default function StatCard({
   unit,
   description,
   icon,
-  colorClass,
   children,
 }: StatCardProps) {
   return (

@@ -69,11 +69,10 @@ export function DatePicker({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full px-6 py-5 rounded-3xl border-2 flex items-center gap-4 transition-all duration-300
-                    ${
-                      isOpen
-                        ? "border-[#C6E065] ring-8 ring-[#C6E065]/10 bg-white"
-                        : "border-[#f0e6cc] bg-white hover:border-[#C6E065]/40 hover:shadow-lg"
-                    }
+                    ${isOpen
+            ? "border-[#C6E065] ring-8 ring-[#C6E065]/10 bg-white"
+            : "border-[#f0e6cc] bg-white hover:border-[#C6E065]/40 hover:shadow-lg"
+          }
                 `}
       >
         <div className="w-12 h-12 bg-[#faf8f2] rounded-2xl flex items-center justify-center text-[#C6E065]">
@@ -93,14 +92,14 @@ export function DatePicker({
         </div>
       </button>
 
-      {}
+      { }
       {isOpen && (
         <div
           className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 z-[100] w-[280px] animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-200"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="bg-white rounded-[32px] shadow-[0_15px_50px_-12px_rgba(0,0,0,0.25)] border border-[#f0e6cc] overflow-hidden">
-            {}
+            { }
             <div className="px-6 pt-5 pb-1 text-center relative">
               <h3 className="text-lg font-black text-[#3d3522]">
                 เลือกวันเกิด
@@ -117,9 +116,9 @@ export function DatePicker({
               </button>
             </div>
 
-            {}
+            { }
             <div className="relative h-[210px] px-4 flex gap-1">
-              {}
+              { }
               <div className="absolute top-1/2 left-3 right-3 h-10 -translate-y-1/2 bg-[#C6E065]/10 border-y-2 border-[#C6E065]/30 rounded-xl pointer-events-none" />
 
               <WheelColumn
@@ -143,12 +142,12 @@ export function DatePicker({
                 flex={1.8}
               />
 
-              {}
+              { }
               <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-white via-white/80 to-transparent pointer-events-none z-10" />
               <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none z-10" />
             </div>
 
-            {}
+            { }
             <div className="px-6 pb-5 pt-0">
               <button
                 onClick={handleConfirm}
@@ -159,7 +158,7 @@ export function DatePicker({
               </button>
             </div>
           </div>
-          {}
+          { }
           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-r border-b border-[#f0e6cc] rotate-45 shadow-lg" />
         </div>
       )}
@@ -189,6 +188,7 @@ function WheelColumn({
     if (listRef.current && index !== -1) {
       listRef.current.scrollTop = index * 42;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleScroll = () => {

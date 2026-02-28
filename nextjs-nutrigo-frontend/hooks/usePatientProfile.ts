@@ -14,7 +14,7 @@ export interface PatientProfile {
   gender?: string;
   bloodType?: string;
   isProfileComplete?: boolean;
-  allergies?: any[];
+  allergies?: unknown[];
   chronicDiseases?: string[];
   healthMetrics?: {
     weightKg: number;

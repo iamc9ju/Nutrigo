@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Anuphan } from "next/font/google";
 import "./globals.css";
-import Footer from '@/components/Footer';
 import QueryProvider from "@/providers/QueryProvider";
 
 const anuphan = Anuphan({

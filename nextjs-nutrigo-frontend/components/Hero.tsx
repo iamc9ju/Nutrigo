@@ -5,6 +5,7 @@ export default function Hero() {
   return (
     <section className="relative pt-32 pb-20 min-h-[100vh] flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0 z-0">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="https://images.unsplash.com/photo-1498837167922-ddd27525d352?q=80&w=2900&auto=format&fit=crop"
           alt="Healthy Lifestyle"
@@ -19,7 +20,7 @@ export default function Hero() {
           เริ่มต้นจาก<span className="text-[#C6E065]">มื้ออาหารที่ใช่</span>
         </h1>
         <p className="text-2xl text-gray-200 mb-10 font-light max-w-2xl mx-auto">
-          "สุขภาพดีไม่ใช่เรื่องยาก แค่มีเพื่อนคู่คิดที่ถูกใจ"
+          &quot;สุขภาพดีไม่ใช่เรื่องยาก แค่มีเพื่อนคู่คิดที่ถูกใจ&quot;
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
           <Button className="min-w-[200px] py-4 bg-[#C6E065] text-[#3d3522] rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_20px_rgba(198,224,101,0.4)]">

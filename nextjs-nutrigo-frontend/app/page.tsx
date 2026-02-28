@@ -1,8 +1,5 @@
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
-
-import KeyFeatures from '@/components/KeyFeatures';
-import HowItWorks from '@/components/HowItWorks';
 import Testimonials from '@/components/Testimonials';
 import NutritionistList from '@/components/NutritionistList';
 import FAQ from '@/components/FAQ';

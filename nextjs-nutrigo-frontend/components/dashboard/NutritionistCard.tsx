@@ -1,6 +1,5 @@
 "use client";
 
-import { Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export interface Nutritionist {
@@ -38,6 +37,7 @@ export default function NutritionistCard({
       }
     >
       <div className="aspect-[4/3] bg-gradient-to-br from-[#f4ebd0] to-[#e8d5a8] relative overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={avatarUrl}
           alt={`${nutritionist.firstName} ${nutritionist.lastName}`}
@@ -53,7 +53,7 @@ export default function NutritionistCard({
         <h3 className="font-bold text-[#3d3522] text-base mb-1 group-hover:text-[#4A6707] transition-colors">
           {nutritionist.firstName} {nutritionist.lastName}
         </h3>
-        {}
+        { }
         {displaySpecialties.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-2">
             {displaySpecialties.map((name) => (

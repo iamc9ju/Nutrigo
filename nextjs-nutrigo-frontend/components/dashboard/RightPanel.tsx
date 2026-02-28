@@ -57,7 +57,7 @@ export default function RightPanel() {
         </div>
       </div>
       <div>
-        <h3 className="font-bold text-[#3d3522] mb-4">Today's Meals</h3>
+        <h3 className="font-bold text-[#3d3522] mb-4">Today&apos;s Meals</h3>
         <div className="space-y-4">
           <div className="p-3 bg-gray-50 rounded-2xl flex gap-3 hover:bg-[#fcfdec] transition-colors group cursor-pointer">
             <div className="w-12 h-12 bg-white rounded-xl shadow-sm overflow-hidden flex-shrink-0">

@@ -87,7 +87,7 @@ export const useAuth = () => {
   };
 
   const registerUser = async (
-    payload: Omit<Record<string, any>, "confirmPassword">,
+    payload: Omit<Record<string, string>, "confirmPassword">,
   ) => {
     setIsLoading(true);
     setError(null);

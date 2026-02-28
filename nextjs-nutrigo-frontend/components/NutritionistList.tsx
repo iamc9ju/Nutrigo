@@ -66,6 +66,7 @@ export default function NutritionistList() {
               <div className="flex flex-col items-center text-center">
                 <div className="mb-4 relative">
                   <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-[#C6E065]/30 shadow-lg group-hover:border-[#C6E065] transition-colors">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={person.image}
                       alt={person.name}

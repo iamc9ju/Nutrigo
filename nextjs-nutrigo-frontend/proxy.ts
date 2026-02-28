@@ -5,9 +5,8 @@ const protectedRoutes = ["/dashboard"];
 const authRoutes = ["/login", "/register"];
 
 export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl; 
+  const { pathname } = request.nextUrl;
   const accessToken = request.cookies.get("accessToken")?.value;
-  const refreshToken = request.cookies.get("refreshToken")?.value;
   const isLoggedIn = !!accessToken;
 
   const isProtected = protectedRoutes.some((route) =>

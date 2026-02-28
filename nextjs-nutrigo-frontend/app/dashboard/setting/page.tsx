@@ -20,7 +20,6 @@ import {
   Languages,
   HelpCircle,
   FileText,
-  Globe,
   Shield,
   Facebook,
   Instagram,
@@ -71,18 +70,17 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {}
+      { }
       <div className="bg-[#f9f8f6] p-1.5 rounded-[20px] flex justify-between items-center mb-8">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 py-3 px-4 rounded-2xl font-bold text-center transition-all duration-300
-                            ${
-                              activeTab === tab.id
-                                ? "bg-white text-[#3d3522] shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
-                                : "text-[#8a7550] hover:text-[#3d3522] hover:bg-black/5"
-                            }`}
+                            ${activeTab === tab.id
+                ? "bg-white text-[#3d3522] shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
+                : "text-[#8a7550] hover:text-[#3d3522] hover:bg-black/5"
+              }`}
           >
             {tab.label}
           </button>
@@ -197,7 +195,7 @@ export default function SettingsPage() {
           </div>
         ) : activeTab === "account" ? (
           <div className="space-y-8">
-            {}
+            { }
             <div className="flex items-center gap-6 pb-8 border-b-2 border-[#f0e6cc]">
               <div className="relative">
                 <div className="w-24 h-24 bg-[#faf8f2] rounded-full border-4 border-[#C6E065] flex items-center justify-center shadow-sm overflow-hidden">
@@ -218,7 +216,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {}
+            { }
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-[#3d3522]">
@@ -254,7 +252,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {}
+            { }
             <div className="bg-[#C6E065]/20 border-2 border-[#C6E065] rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-[#C6E065] rounded-full flex items-center justify-center flex-shrink-0 text-[#3d3522]">
@@ -292,9 +290,9 @@ export default function SettingsPage() {
               </Link>
             </div>
 
-            {}
+            { }
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {}
+              { }
               <div className="bg-[#faf8f2] border-2 border-[#f0e6cc] rounded-2xl p-4 flex items-center gap-4">
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-[#C6E065] shadow-sm">
                   <Scale className="w-6 h-6" />
@@ -311,7 +309,7 @@ export default function SettingsPage() {
                   </p>
                 </div>
               </div>
-              {}
+              { }
               <div className="bg-[#faf8f2] border-2 border-[#f0e6cc] rounded-2xl p-4 flex items-center gap-4">
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-orange-400 shadow-sm">
                   <Ruler className="w-6 h-6" />
@@ -328,7 +326,7 @@ export default function SettingsPage() {
                   </p>
                 </div>
               </div>
-              {}
+              { }
               <div className="bg-[#faf8f2] border-2 border-[#f0e6cc] rounded-2xl p-4 flex items-center gap-4">
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-blue-400 shadow-sm">
                   <Activity className="w-6 h-6" />
@@ -341,17 +339,17 @@ export default function SettingsPage() {
                     {isLoading
                       ? "..."
                       : profile?.healthMetrics?.weightKg &&
-                          profile?.healthMetrics?.heightCm
+                        profile?.healthMetrics?.heightCm
                         ? (
-                            profile.healthMetrics.weightKg /
-                            Math.pow(profile.healthMetrics.heightCm / 100, 2)
-                          ).toFixed(1)
+                          profile.healthMetrics.weightKg /
+                          Math.pow(profile.healthMetrics.heightCm / 100, 2)
+                        ).toFixed(1)
                         : "-"}
                   </p>
                 </div>
               </div>
 
-              {}
+              { }
               <div className="bg-[#faf8f2] border-2 border-[#f0e6cc] rounded-2xl p-4 flex items-center gap-4">
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-red-400 shadow-sm">
                   <Activity className="w-6 h-6" />
@@ -370,7 +368,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {}
+            { }
             <div className="space-y-4">
               <h3 className="font-bold text-[#3d3522] border-b border-[#f0e6cc] pb-2">
                 ข้อมูลส่วนตัว
@@ -400,9 +398,9 @@ export default function SettingsPage() {
                     ? "..."
                     : profile?.dateOfBirth
                       ? new Date(profile.dateOfBirth).toLocaleDateString(
-                          "th-TH",
-                          { year: "numeric", month: "long", day: "numeric" },
-                        )
+                        "th-TH",
+                        { year: "numeric", month: "long", day: "numeric" },
+                      )
                       : "-"}
                 </div>
                 <div className="flex items-center justify-between p-4 bg-white border border-[#f0e6cc] rounded-2xl">
@@ -419,7 +417,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {}
+            { }
             <div className="space-y-4">
               <h3 className="font-bold text-[#3d3522] border-b border-[#f0e6cc] pb-2">
                 โรคประจำตัว & ภูมิแพ้
@@ -468,7 +466,7 @@ export default function SettingsPage() {
             </div>
 
             <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-              {}
+              { }
               <div className="space-y-2">
                 <label className="text-sm font-bold text-[#3d3522]">
                   รหัสผ่านปัจจุบัน
@@ -501,7 +499,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {}
+              { }
               <div className="space-y-2">
                 <label className="text-sm font-bold text-[#3d3522]">
                   รหัสผ่านใหม่
@@ -526,7 +524,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {}
+              { }
               <div className="space-y-2">
                 <label className="text-sm font-bold text-[#3d3522]">
                   ยืนยันรหัสผ่านใหม่
@@ -571,7 +569,7 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            {}
+            { }
             <div className="space-y-4">
               <h3 className="font-bold text-[#3d3522] border-b border-[#f0e6cc] pb-2">
                 ภาษาและภูมิภาค
@@ -595,7 +593,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {}
+            { }
             <div className="space-y-4">
               <h3 className="font-bold text-[#3d3522] border-b border-[#f0e6cc] pb-2">
                 หน่วยวัด
@@ -623,7 +621,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {}
+            { }
             <div className="space-y-4">
               <h3 className="font-bold text-[#3d3522] border-b border-[#f0e6cc] pb-2">
                 เกี่ยวกับแอปพลิเคชัน
@@ -677,7 +675,7 @@ export default function SettingsPage() {
           </div>
         ) : (
           <div className="space-y-8 max-w-2xl mx-auto">
-            {}
+            { }
             <div className="text-center mb-12">
               <div className="w-24 h-24 bg-[#3d3522] rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-xl transform hover:rotate-3 transition-transform duration-300">
                 <span className="text-4xl">🥗</span>
@@ -695,7 +693,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {}
+            { }
             <div className="bg-[#faf8f2] border-2 border-[#f0e6cc] rounded-2xl p-6 text-center relative overflow-hidden">
               <div className="absolute top-0 right-0 w-20 h-20 bg-[#C6E065]/20 rounded-bl-full -mr-4 -mt-4" />
               <div className="absolute bottom-0 left-0 w-16 h-16 bg-[#3d3522]/5 rounded-tr-full -ml-4 -mb-4" />
@@ -704,14 +702,14 @@ export default function SettingsPage() {
                 ภารกิจของเรา
               </h3>
               <p className="text-[#8a7550] leading-relaxed relative z-10">
-                "เรามุ่งมั่นที่จะช่วยให้ทุกคนมีสุขภาพที่ดีขึ้น
+                &quot;เรามุ่งมั่นที่จะช่วยให้ทุกคนมีสุขภาพที่ดีขึ้น
                 ผ่านการแนะนำโภชนาการที่เข้าใจง่าย
                 และสามารถนำไปปรับใช้ได้จริงในชีวิตประจำวัน
-                เพื่อสร้างสังคมสุขภาพดีที่ยั่งยืน"
+                เพื่อสร้างสังคมสุขภาพดีที่ยั่งยืน&quot;
               </p>
             </div>
 
-            {}
+            { }
             <div className="space-y-4">
               <h3 className="font-bold text-[#3d3522] border-b border-[#f0e6cc] pb-2">
                 ติดต่อเรา
@@ -753,7 +751,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {}
+            { }
             <div className="text-center pt-4">
               <p className="text-[#8a7550] font-bold mb-4">ติดตามเรา</p>
               <div className="flex justify-center gap-4">
