@@ -71,7 +71,7 @@ describe('AuthService Integration - Race Conditions & Security Boundaries', () =
 
   describe('JWT Security - Refresh Token Reuse Attack', () => {
     it('should revoke all family tokens if a refresh token is reused', async () => {
-      const user = await authService.register({
+      const _user = await authService.register({
         email: 'token_attack@hospital.com',
         password: 'Pass',
         firstName: 'F',

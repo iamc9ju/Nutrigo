@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { PatientsService } from './patients.service';
 import { CompleteProfileDto } from './dto/complete-profile.dto';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';

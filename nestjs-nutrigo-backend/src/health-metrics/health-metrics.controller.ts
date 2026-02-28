@@ -7,12 +7,10 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  UseGuards,
 } from '@nestjs/common';
 import { HealthMetricsService } from './health-metrics.service';
 import { CreateHealthMetricDto } from './dto/create-health-metric.dto';
 import { UpdateHealthMetricDto } from './dto/update-health-metric.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth-guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 import { Auth } from 'src/auth/decorators/auth.decorator';

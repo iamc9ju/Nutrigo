@@ -7,10 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Req,
-  UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth-guard';
 import { CreateAllergyDto } from './dto/create-allergy.dto';
 import type { Request } from 'express';
 import { UpdateAllergyDto } from './dto/update-allergy.dto';

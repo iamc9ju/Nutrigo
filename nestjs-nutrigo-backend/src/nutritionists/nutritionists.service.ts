@@ -84,7 +84,7 @@ export class NutritionistsService {
           ? nutri.reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
           : 0;
 
-      const { reviews, ...rest } = nutri;
+      const { reviews: _reviews, ...rest } = nutri;
       return {
         ...rest,
         avgRating,

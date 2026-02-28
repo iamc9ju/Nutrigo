@@ -37,20 +37,22 @@ jobs:
         run: npx prettier --check "**/*.{ts,tsx,json,md}"
         continue-on-error: true
 
+      - name: Generate Prisma Client
+        run: npx prisma generate
+        working-directory: nestjs-nutrigo-backend
+
+      - name: Build Shared Package
+        run: npx turbo run build --filter=@nutrigo/shared
+
       - name: Run Linter
         run: npx turbo run lint
-
-     
-      - name: Generate Prisma Client
-        run: npm run prisma:generate --prefix nestjs-nutrigo-backend
 
       - name: Build Backend
         run: npx turbo run build --filter=nestjs-nutrigo-backend
 
-     
       - name: Build Frontend
         run: npx turbo run build --filter=nextjs-nutrigo-frontend
-     
+
       - name: Run All Tests (Jest)
         run: npx turbo run test
         env:
