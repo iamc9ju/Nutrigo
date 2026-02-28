@@ -30,7 +30,12 @@ export default function LoginPage() {
 
     const { loginUser, isLoading, error } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
-    const [rememberMe, setRememberMe] = useState(false);
+    const [rememberMe, setRememberMe] = useState(() => {
+        if (typeof window !== "undefined") {
+            return !!localStorage.getItem("savedEmail");
+        }
+        return false;
+    });
 
     const onSubmit = async (data: LoginFormInputs) => {
         await loginUser(data, rememberMe);
@@ -40,8 +45,6 @@ export default function LoginPage() {
         const savedEmail = localStorage.getItem("savedEmail");
         if (savedEmail) {
             setValue("email", savedEmail);
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setRememberMe(true);
         }
     }, [setValue]);
 

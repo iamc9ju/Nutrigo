@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Scale, Ruler, Activity, ChevronLeft, Check, Info } from "lucide-react";
 import Swal from "sweetalert2";
@@ -10,41 +10,47 @@ import {
 } from "@/hooks/usePatientProfile";
 
 export default function HealthMetricsPage() {
-    const router = useRouter();
     const { data: profile } = usePatientProfile();
+
+    // Use key to re-mount form when profile loads — avoids setState-in-effect
+    const profileKey = profile?.healthMetrics ? "loaded" : "loading";
+
+    return (
+        <HealthMetricsForm
+            key={profileKey}
+            initialWeight={profile?.healthMetrics?.weightKg?.toString() ?? ""}
+            initialHeight={profile?.healthMetrics?.heightCm?.toString() ?? ""}
+            initialBodyFat={profile?.healthMetrics?.bodyFatPercent?.toString() ?? ""}
+        />
+    );
+}
+
+function HealthMetricsForm({
+    initialWeight,
+    initialHeight,
+    initialBodyFat,
+}: {
+    initialWeight: string;
+    initialHeight: string;
+    initialBodyFat: string;
+}) {
+    const router = useRouter();
     const updateMetricsMutation = useUpdateHealthMetrics();
     const isPending = updateMetricsMutation.isPending;
-    const [weight, setWeight] = useState<string>("");
-    const [height, setHeight] = useState<string>("");
-    const [bmi, setBmi] = useState<number | null>(null);
-    const [bodyFat, setBodyFat] = useState<string>("");
+    const [weight, setWeight] = useState(initialWeight);
+    const [height, setHeight] = useState(initialHeight);
+    const [bodyFat, setBodyFat] = useState(initialBodyFat);
 
-    /* eslint-disable react-hooks/set-state-in-effect */
-    useEffect(() => {
-        if (profile?.healthMetrics) {
-            setWeight(profile.healthMetrics.weightKg.toString());
-            setHeight(profile.healthMetrics.heightCm.toString());
-            if (profile.healthMetrics.bodyFatPercent) {
-                setBodyFat(profile.healthMetrics.bodyFatPercent.toString());
-            }
-        }
-    }, [profile]);
-    /* eslint-enable react-hooks/set-state-in-effect */
-
-    /* eslint-disable react-hooks/set-state-in-effect */
-    useEffect(() => {
+    // BMI is derived state — compute it directly, don't store in useState
+    const bmi = useMemo(() => {
         const w = parseFloat(weight);
         const h = parseFloat(height);
-
         if (w > 0 && h > 0) {
             const hMeter = h / 100;
-            const score = w / (hMeter * hMeter);
-            setBmi(parseFloat(score.toFixed(2)));
-        } else {
-            setBmi(null);
+            return parseFloat((w / (hMeter * hMeter)).toFixed(2));
         }
+        return null;
     }, [weight, height]);
-    /* eslint-enable react-hooks/set-state-in-effect */
 
     const getBMICategory = (score: number) => {
         if (score < 18.5)
