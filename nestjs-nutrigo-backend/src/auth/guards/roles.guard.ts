@@ -8,6 +8,8 @@ import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { Observable } from 'rxjs';
 import { UserRole } from '@prisma/client';
+import type { Request } from 'express';
+import { JwtPayload } from '../interface/jwt-payload.interface';
 
 // ทุกGuardต้องเรียกcanActivate
 @Injectable()
@@ -34,12 +36,13 @@ export class RolesGuard implements CanActivate {
       );
     }
 
-    const { user } = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<Request>();
+    const user = request.user as JwtPayload | undefined;
     if (!user || !user.role) {
       throw new ForbiddenException('User context or role not found');
     }
 
-    const hasRole = requiredRoles.includes(user.role);
+    const hasRole = requiredRoles.includes(user.role as UserRole);
 
     if (!hasRole) {
       throw new ForbiddenException(

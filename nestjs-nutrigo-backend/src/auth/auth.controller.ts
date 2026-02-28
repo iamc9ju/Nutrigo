@@ -62,7 +62,9 @@ export class AuthController {
     @Headers('user-agent') userAgent: string,
     @Headers('x-device-id') deviceId?: string,
   ) {
-    const refreshToken = request.cookies['refreshToken'];
+    const refreshToken = (request.cookies as Record<string, string>)[
+      'refreshToken'
+    ];
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token not found');
     }
@@ -99,7 +101,9 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const refreshToken = request.cookies['refreshToken'];
+    const refreshToken = (request.cookies as Record<string, string>)[
+      'refreshToken'
+    ];
 
     response.clearCookie('accessToken');
     response.clearCookie('refreshToken');

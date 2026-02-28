@@ -4,11 +4,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtPayload } from '../interface/jwt-payload.interface';
+import type { Request } from 'express';
 
 export const CurrentUser = createParamDecorator(
   (data: keyof JwtPayload | undefined, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-    const user = request.user;
+    const request = ctx.switchToHttp().getRequest<Request>();
+    const user = request.user as unknown;
 
     if (!user) {
       throw new UnauthorizedException('User not found in request');

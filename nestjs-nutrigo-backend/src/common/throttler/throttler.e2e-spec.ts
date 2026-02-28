@@ -5,6 +5,7 @@ import { AppModule } from 'src/app.module';
 
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import type { Server } from 'http';
 
 describe('ThrottlerGuard Rate Limiting (e2e)', () => {
   let app: INestApplication;
@@ -39,10 +40,12 @@ describe('ThrottlerGuard Rate Limiting (e2e)', () => {
   describe('DDoS Protection on /auth/login', () => {
     it(`should block the request with 429 when exceeding ${MAX_CALLS} attempts`, async () => {
       const requests = Array.from({ length: MAX_CALLS + 1 }).map(() =>
-        request(app.getHttpServer()).post('/api/auth/login').send({
-          email: 'ddos@test.com',
-          password: 'incorrect',
-        }),
+        request(app.getHttpServer() as Server)
+          .post('/api/auth/login')
+          .send({
+            email: 'ddos@test.com',
+            password: 'incorrect',
+          }),
       );
       const responses = await Promise.all(requests);
 
@@ -54,7 +57,7 @@ describe('ThrottlerGuard Rate Limiting (e2e)', () => {
       const blockedRequests = statusCodes.filter((status) => status === 429);
       expect(blockedRequests.length).toBe(1);
 
-      const finalTry = await request(app.getHttpServer())
+      const finalTry = await request(app.getHttpServer() as Server)
         .post('/api/auth/login')
         .send({ email: 'ddos@test.com', password: 'incorrect' });
       expect(finalTry.status).toBe(429);

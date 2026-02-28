@@ -3,9 +3,14 @@ import { HealthMetricsService } from './health-metrics.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 
+interface MockPrisma {
+  patient: { findUnique: jest.Mock };
+  healthMetric: { findUnique: jest.Mock; delete: jest.Mock };
+}
+
 describe('HealthMetricsService - Business Boundary Control', () => {
   let service: HealthMetricsService;
-  let prismaMock: any;
+  let prismaMock: MockPrisma;
 
   beforeEach(async () => {
     prismaMock = {

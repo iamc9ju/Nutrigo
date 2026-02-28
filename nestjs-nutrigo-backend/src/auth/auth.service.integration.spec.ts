@@ -4,6 +4,12 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
+interface RaceConditionResult {
+  message?: string;
+  response?: { statusCode?: number };
+  code?: string;
+}
+
 describe('AuthService Integration - Race Conditions & Security Boundaries', () => {
   let authService: AuthService;
   let prisma: PrismaService;
@@ -44,19 +50,20 @@ describe('AuthService Integration - Race Conditions & Security Boundaries', () =
       };
 
       const concurrentRequests = Array.from({ length: 5 }).map(() =>
-        authService.register(dto).catch((err) => err),
+        authService.register(dto).catch((err: RaceConditionResult) => err),
       );
 
       const results = await Promise.all(concurrentRequests);
 
       const successes = results.filter(
-        (res) => res?.message === 'Registration successful',
+        (res) =>
+          (res as RaceConditionResult)?.message === 'Registration successful',
       );
       const failures = results.filter(
         (res) =>
-          res?.response?.statusCode === 409 ||
-          res?.code === 'P2002' ||
-          res?.code === 'P2028',
+          (res as RaceConditionResult)?.response?.statusCode === 409 ||
+          (res as RaceConditionResult)?.code === 'P2002' ||
+          (res as RaceConditionResult)?.code === 'P2028',
       );
 
       expect(successes).toHaveLength(1);
@@ -71,7 +78,7 @@ describe('AuthService Integration - Race Conditions & Security Boundaries', () =
 
   describe('JWT Security - Refresh Token Reuse Attack', () => {
     it('should revoke all family tokens if a refresh token is reused', async () => {
-      const _user = await authService.register({
+      await authService.register({
         email: 'token_attack@hospital.com',
         password: 'Pass',
         firstName: 'F',

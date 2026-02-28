@@ -5,6 +5,7 @@ import { AppModule } from 'src/app.module';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { HttpAdapterHost } from '@nestjs/core';
 import { PrismaClientExceptionFilter } from 'src/common/filters/prisma-client-exception.filter';
+import type { Server } from 'http';
 
 describe('Prisma Exception Filter (e2e)', () => {
   let app: INestApplication;
@@ -37,19 +38,21 @@ describe('Prisma Exception Filter (e2e)', () => {
 
     beforeAll(async () => {
       //Seed ข้อมูลดักไว้ก่อน 1 ตัว
-      await request(app.getHttpServer()).post('/api/auth/register').send({
-        email: testEmail,
-        password: 'Password123!',
-        firstName: 'First',
-        lastName: 'User',
-        phone: '1234567890',
-        role: 'patient',
-      });
+      await request(app.getHttpServer() as Server)
+        .post('/api/auth/register')
+        .send({
+          email: testEmail,
+          password: 'Password123!',
+          firstName: 'First',
+          lastName: 'User',
+          phone: '1234567890',
+          role: 'patient',
+        });
     });
 
     it('should catch the DB error and return 409 Conflict instead of 500', async () => {
       //จำลองคนสมัครซ้ำด้วยอีเมลเดิมเป๊ะๆ
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpServer() as Server)
         .post('/api/auth/register')
         .send({
           email: testEmail,
@@ -64,7 +67,7 @@ describe('Prisma Exception Filter (e2e)', () => {
       expect(response.status).toBe(409);
       expect(response.body).toMatchObject({
         error: 'Conflict',
-        message: expect.stringContaining('conflict'), //เช็คว่ามีคำว่า conflict ใน message ตามแผน
+        message: expect.stringContaining('conflict') as string, //เช็คว่ามีคำว่า conflict ใน message ตามแผน
       });
     });
   });

@@ -248,7 +248,11 @@ export class AuthService {
     return user;
   }
 
-  private generateAccessToken(user: any) {
+  private generateAccessToken(user: {
+    userId: string;
+    email: string;
+    role: string;
+  }) {
     const payload = {
       sub: user.userId,
       email: user.email,

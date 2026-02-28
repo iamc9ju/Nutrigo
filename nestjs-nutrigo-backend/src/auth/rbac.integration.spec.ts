@@ -9,6 +9,8 @@ import { PatientsModule } from 'src/patients/patients.module';
 import cookieParser from 'cookie-parser';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
+import type { Server } from 'http';
+
 describe('Role-Based Access Control (RBAC) - Integration Test', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -61,7 +63,7 @@ describe('Role-Based Access Control (RBAC) - Integration Test', () => {
     });
 
     it('should block PATIENT from accessing NUTRITIONIST schedules (POST /nutritionists/me/schedules)', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpServer() as Server)
         .post('/nutritionists/me/schedules')
         .set('Cookie', [`accessToken=${patientAccessToken}`])
         .send({
@@ -71,11 +73,14 @@ describe('Role-Based Access Control (RBAC) - Integration Test', () => {
         });
 
       expect(response.status).toBe(403);
-      expect(response.body.message).toMatch(/Access denied/);
+      expect(response.body).toHaveProperty('message');
+      expect((response.body as { message: string }).message).toMatch(
+        /Access denied/,
+      );
     });
 
     it('should allow PATIENT to access PATIENT profiles (GET /patients/profile)', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpServer() as Server)
         .get('/patients/profile')
         .set('Cookie', [`accessToken=${patientAccessToken}`]);
 

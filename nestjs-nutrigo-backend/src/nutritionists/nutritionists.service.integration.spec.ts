@@ -54,7 +54,7 @@ describe('NutritionistsService Integration - Concurrency & Constraints', () => {
       };
 
       const concurrentRequests = Array.from({ length: 5 }).map(() =>
-        service.createSchedule(user.userId, dto).catch((err) => err),
+        service.createSchedule(user.userId, dto).catch((err: unknown) => err),
       );
 
       await Promise.all(concurrentRequests);

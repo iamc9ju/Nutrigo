@@ -13,6 +13,13 @@ export interface ApiResponse<T> {
   message: string;
 }
 
+interface ResponseWithMeta {
+  message?: string;
+  meta?: Record<string, unknown>;
+  data?: unknown;
+  [key: string]: unknown;
+}
+
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<
   T,
@@ -23,30 +30,32 @@ export class ResponseInterceptor<T> implements NestInterceptor<
     next: CallHandler,
   ): Observable<ApiResponse<T>> {
     return next.handle().pipe(
-      map((data) => {
-        const { message, meta, ...rest } = data || {};
+      map((rawData: unknown) => {
+        const data = (rawData || {}) as ResponseWithMeta;
+        const { message, meta, ...rest } = data;
 
-        let extractedMeta = meta;
-        let responseData = rest.data ?? rest;
+        let extractedMeta: Record<string, unknown> | undefined = meta;
+        let responseData: unknown = rest.data ?? rest;
 
         if (
           responseData &&
           typeof responseData === 'object' &&
           'meta' in responseData
         ) {
-          extractedMeta = responseData.meta;
-          responseData = responseData.data ?? responseData;
+          const nested = responseData as ResponseWithMeta;
+          extractedMeta = nested.meta;
+          responseData = nested.data ?? responseData;
         }
 
         const isEmptyObject =
           responseData &&
           typeof responseData === 'object' &&
           !Array.isArray(responseData) &&
-          Object.keys(responseData).length === 0;
+          Object.keys(responseData as Record<string, unknown>).length === 0;
 
         return {
           success: true,
-          data: isEmptyObject ? null : responseData,
+          data: (isEmptyObject ? null : responseData) as T,
           ...(extractedMeta ? { meta: extractedMeta } : {}),
           message: message || 'Operation successful',
         };

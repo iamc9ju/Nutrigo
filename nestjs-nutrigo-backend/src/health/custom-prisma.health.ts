@@ -16,9 +16,10 @@ export class CustomPrismaHealthIndicator extends HealthIndicator {
       await this.prismaService.$connect();
       return this.getStatus(key, true);
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
       throw new HealthCheckError(
         'Prisma check failed',
-        this.getStatus(key, false, { error: error.message }),
+        this.getStatus(key, false, { error: message }),
       );
     }
   }

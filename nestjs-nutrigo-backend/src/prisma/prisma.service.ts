@@ -29,7 +29,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     } catch (e) {
       console.warn(
         'DNS Resolution failed, falling back to hostname',
-        e.message,
+        e instanceof Error ? e.message : String(e),
       );
     }
 
