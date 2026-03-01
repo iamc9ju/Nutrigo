@@ -6,8 +6,6 @@ import {
 } from './dto/find-nutritionists-query.dto';
 import { Prisma, VerificationStatus } from '@prisma/client';
 import { addMinutes, format, getDay, isAfter, parseISO } from 'date-fns';
-import { CreateScheduleDto } from './dto/create-schedule.dto';
-import { CreateLeaveDto } from './dto/create-leave.dto';
 
 @Injectable()
 export class NutritionistsService {
@@ -250,81 +248,17 @@ export class NutritionistsService {
       },
     });
 
-    const finalSlots = allSlots.map((slot) => {
-      const isBooked = existingAppointments.some((appt) => {
-        return appt.startTime.getTime() === slot.startDateTime.getTime();
-      });
+    const bookedTimes = new Set(
+      existingAppointments.map((appt) => appt.startTime.getTime()),
+    );
 
+    const finalSlots = allSlots.map((slot) => {
       return {
         time: slot.time,
-        available: !isBooked,
+        available: !bookedTimes.has(slot.startDateTime.getTime()),
       };
     });
 
     return finalSlots;
-  }
-
-  async createSchedule(userId: string, dto: CreateScheduleDto) {
-    const nutritionist = await this.prisma.nutritionist.findUnique({
-      where: { userId },
-    });
-
-    if (!nutritionist) {
-      throw new NotFoundException('คุณไม่ได้ลงทะเบียนเป็นนักโภชนาการ');
-    }
-
-    return this.prisma.nutritionistSchedule.upsert({
-      where: {
-        nutritionistId_dayOfWeek: {
-          nutritionistId: nutritionist.nutritionistId,
-          dayOfWeek: dto.dayOfWeek,
-        },
-      },
-      update: {
-        startTime: dto.startTime,
-        endTime: dto.endTime,
-        isAvailable: dto.isAvailable ?? true,
-      },
-      create: {
-        nutritionistId: nutritionist.nutritionistId,
-        dayOfWeek: dto.dayOfWeek,
-        startTime: dto.startTime,
-        endTime: dto.endTime,
-        isAvailable: dto.isAvailable ?? true,
-      },
-    });
-  }
-
-  async createLeave(userId: string, dto: CreateLeaveDto) {
-    const nutritionist = await this.prisma.nutritionist.findUnique({
-      where: { userId },
-    });
-
-    if (!nutritionist) {
-      throw new NotFoundException('คุณไม่ได้ลงทะเบียนเป็นนักโภชนาการ');
-    }
-
-    const leaveDate = new Date(`${dto.leaveDate}T00:00:00.000Z`);
-
-    return this.prisma.nutritionistLeave.upsert({
-      where: {
-        nutritionistId_leaveDate: {
-          nutritionistId: nutritionist.nutritionistId,
-          leaveDate: leaveDate,
-        },
-      },
-      update: {
-        isFullDay: dto.isFullDay ?? true,
-        newStartTime: dto.newStartTime,
-        newEndTime: dto.newEndTime,
-      },
-      create: {
-        nutritionistId: nutritionist.nutritionistId,
-        leaveDate: leaveDate,
-        isFullDay: dto.isFullDay ?? true,
-        newStartTime: dto.newStartTime,
-        newEndTime: dto.newEndTime,
-      },
-    });
   }
 }

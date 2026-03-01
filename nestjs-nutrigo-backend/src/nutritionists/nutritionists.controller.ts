@@ -8,6 +8,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { NutritionistsService } from './nutritionists.service';
+import { NutritionistLeavesService } from './nutritionist-leaves.service';
+import { NutritionistSchedulesService } from './nutritionist-schedules.service';
 import { FindNutritionistsQueryDto } from './dto/find-nutritionists-query.dto';
 import { GetAvailabilityDto } from './dto/get-availability.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth-guard';
@@ -19,7 +21,11 @@ import { UserRole } from '@prisma/client';
 
 @Controller('nutritionists')
 export class NutritionistsController {
-  constructor(private nutritionistsService: NutritionistsService) {}
+  constructor(
+    private nutritionistsService: NutritionistsService,
+    private nutritionistLeavesService: NutritionistLeavesService,
+    private nutritionistSchedulesService: NutritionistSchedulesService,
+  ) {}
 
   @Get()
   async findAll(@Query() query: FindNutritionistsQueryDto) {
@@ -51,7 +57,10 @@ export class NutritionistsController {
     @CurrentUser('sub') userId: string,
     @Body() dto: CreateScheduleDto,
   ) {
-    const data = await this.nutritionistsService.createSchedule(userId, dto);
+    const data = await this.nutritionistSchedulesService.createSchedule(
+      userId,
+      dto,
+    );
     return data;
   }
 
@@ -61,7 +70,7 @@ export class NutritionistsController {
     @CurrentUser('sub') userId: string,
     @Body() dto: CreateLeaveDto,
   ) {
-    const data = await this.nutritionistsService.createLeave(userId, dto);
+    const data = await this.nutritionistLeavesService.createLeave(userId, dto);
     return data;
   }
 }

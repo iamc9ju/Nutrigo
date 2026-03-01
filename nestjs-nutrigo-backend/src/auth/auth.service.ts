@@ -11,6 +11,9 @@ import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import * as crypto from 'crypto';
 import { UserWithRelation } from './interface/user';
+import { AUTH_CONFIG } from 'src/common/constants/time.constants';
+import { ErrorMessages } from 'src/common/constants/response.constants';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +22,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -33,13 +37,13 @@ export class AuthService {
         this.logger.warn(
           `Registration attempt with existing email: ${dto.email}`,
         );
-        throw new ConflictException('อีเมลนี้ถูกใช้งานแล้ว');
+        throw new ConflictException(ErrorMessages.AUTH.EMAIL_IN_USE);
       }
       if (existingUser.phone === dto.phone) {
         this.logger.warn(
           `Registration attempt with existing phone: ${dto.phone}`,
         );
-        throw new ConflictException('phoneNumber Error');
+        throw new ConflictException(ErrorMessages.AUTH.PHONE_IN_USE);
       }
     }
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -106,7 +110,9 @@ export class AuthService {
     const [tokenId, secret] = oldRefreshToken.split('.');
 
     if (!tokenId || !secret) {
-      throw new UnauthorizedException('Invalid refresh token format');
+      throw new UnauthorizedException(
+        ErrorMessages.AUTH.INVALID_REFRESH_TOKEN_FORMAT,
+      );
     }
 
     const token = await this.prisma.refreshToken.findUnique({
@@ -115,29 +121,34 @@ export class AuthService {
     });
 
     if (!token) {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new UnauthorizedException(ErrorMessages.AUTH.INVALID_REFRESH_TOKEN);
     }
 
     if (token.revokedAt || token.expiresAt < new Date()) {
-      throw new UnauthorizedException('Refresh token expired or revoked');
+      throw new UnauthorizedException(ErrorMessages.AUTH.TOKEN_EXPIRED_REVOKED);
     }
 
     if (token.usedAt) {
-      await this.prisma.refreshToken.updateMany({
-        where: { family: token.family },
-        data: { revokedAt: new Date() },
-      });
-      this.logger.warn(
-        `Token reuse detected for user ${token.userId}, family ${token.family}`,
-      );
-      throw new UnauthorizedException(
-        'Token reuse detected - all sessions revoked',
-      );
+      const GRACE_PERIOD_MS = 60 * 1000;
+      if (Date.now() - token.usedAt.getTime() > GRACE_PERIOD_MS) {
+        await this.prisma.refreshToken.updateMany({
+          where: { family: token.family },
+          data: { revokedAt: new Date() },
+        });
+        this.logger.warn(
+          `Token reuse detected for user ${token.userId}, family ${token.family}`,
+        );
+        throw new UnauthorizedException(
+          ErrorMessages.AUTH.TOKEN_REUSE_DETECTED,
+        );
+      }
+
+      throw new UnauthorizedException(ErrorMessages.AUTH.INVALID_REFRESH_TOKEN);
     }
 
     const isValid = await bcrypt.compare(secret, token.secretHash);
     if (!isValid) {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new UnauthorizedException(ErrorMessages.AUTH.INVALID_REFRESH_TOKEN);
     }
 
     const newTokenId = crypto.randomUUID();
@@ -159,7 +170,9 @@ export class AuthService {
           deviceId: deviceId ?? token.deviceId,
           ipAddress: ip ?? token.ipAddress,
           userAgent: userAgent ?? token.userAgent,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          expiresAt: new Date(
+            Date.now() + AUTH_CONFIG.REFRESH_TOKEN_EXPIRES_IN_MS,
+          ),
         },
       });
     });
@@ -169,14 +182,16 @@ export class AuthService {
       email: token.user.email,
       role: token.user.role,
     };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+    const accessToken = this.jwtService.sign(payload);
     return { accessToken, refreshToken: newRefreshToken };
   }
 
   async logout(refreshToken: string) {
     const [tokenId, secret] = refreshToken.split('.');
     if (!tokenId || !secret) {
-      throw new UnauthorizedException('Invalid refresh token format');
+      throw new UnauthorizedException(
+        ErrorMessages.AUTH.INVALID_REFRESH_TOKEN_FORMAT,
+      );
     }
 
     const token = await this.prisma.refreshToken.findUnique({
@@ -216,7 +231,7 @@ export class AuthService {
     });
 
     if (!userBase) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException(ErrorMessages.AUTH.USER_NOT_FOUND);
     }
 
     const user = await this.prisma.user.findUnique({
@@ -228,7 +243,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException(ErrorMessages.AUTH.USER_NOT_FOUND);
     }
 
     return this.flattenUser(user);
@@ -242,7 +257,7 @@ export class AuthService {
 
     if (!user || !(await bcrypt.compare(pass, user.passwordHash))) {
       this.logger.warn(`Failed login attempt: ${email}`);
-      throw new UnauthorizedException('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+      throw new UnauthorizedException(ErrorMessages.AUTH.INVALID_CREDENTIALS);
     }
 
     return user;
@@ -258,7 +273,7 @@ export class AuthService {
       email: user.email,
       role: user.role,
     };
-    return this.jwtService.sign(payload, { expiresIn: '15m' });
+    return this.jwtService.sign(payload);
   }
 
   private async createRefreshToken(
@@ -280,7 +295,9 @@ export class AuthService {
         deviceId,
         ipAddress: ip || null,
         userAgent,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        expiresAt: new Date(
+          Date.now() + AUTH_CONFIG.REFRESH_TOKEN_EXPIRES_IN_MS,
+        ),
       },
     });
 
@@ -288,26 +305,16 @@ export class AuthService {
   }
 
   private flattenUser(user: UserWithRelation) {
-    const {
-      userId,
-      phone,
-      email,
-      role,
-      is2faEnabled,
-      createdAt,
-      patient,
-      nutritionist,
-    } = user;
+    const { userId, phone, email, role, is2faEnabled, createdAt } = user;
 
     let firstName = '';
     let lastName = '';
 
-    if (role === 'patient' && patient) {
-      firstName = patient.firstName;
-      lastName = patient.lastName;
-    } else if (role === 'nutritionist' && nutritionist) {
-      firstName = nutritionist.firstName;
-      lastName = nutritionist.lastName;
+    const profile = user[role as keyof UserWithRelation];
+    if (profile && typeof profile === 'object' && 'firstName' in profile) {
+      firstName = (profile as { firstName: string; lastName: string })
+        .firstName;
+      lastName = (profile as { firstName: string; lastName: string }).lastName;
     }
 
     return {

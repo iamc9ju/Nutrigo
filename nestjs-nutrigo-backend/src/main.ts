@@ -1,12 +1,14 @@
 import { NestFactory, HttpAdapterHost } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ConfigService } from '@nestjs/config';
 import { MyLoggerService } from './my-logger/my-logger.service';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { PrismaClientExceptionFilter } from './common/filters/prisma-client-exception.filter';
+import { Reflector } from '@nestjs/core';
+import { GlobalExceptionsFilter } from './common/filters/all-exceptions.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
@@ -15,10 +17,15 @@ async function bootstrap() {
 
   app.use(helmet());
 
-  app.useGlobalInterceptors(new ResponseInterceptor());
+  const reflector = app.get(Reflector);
+  app.useGlobalInterceptors(new ResponseInterceptor(reflector));
+
+  const configService = app.get(ConfigService);
+  const frontendUrl =
+    configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
 
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: frontendUrl,
     credentials: true,
   });
   app.setGlobalPrefix('api');
@@ -42,9 +49,10 @@ async function bootstrap() {
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, documentFactory);
 
-  // ถ้าPrismaพังที่ไหนfilterนี้จะจัดการให้หมด
-  const { httpAdapter } = app.get(HttpAdapterHost);
-  app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter));
+  const httpAdapterHost = app.get(HttpAdapterHost);
+  const myLogger = app.get(MyLoggerService);
+
+  app.useGlobalFilters(new GlobalExceptionsFilter(httpAdapterHost, myLogger));
 
   await app.listen(process.env.PORT ?? 4000);
 }

@@ -11,10 +11,7 @@ import {
 
 export default function HealthMetricsPage() {
     const { data: profile } = usePatientProfile();
-
-    // Use key to re-mount form when profile loads — avoids setState-in-effect
     const profileKey = profile?.healthMetrics ? "loaded" : "loading";
-
     return (
         <HealthMetricsForm
             key={profileKey}
@@ -41,7 +38,6 @@ function HealthMetricsForm({
     const [height, setHeight] = useState(initialHeight);
     const [bodyFat, setBodyFat] = useState(initialBodyFat);
 
-    // BMI is derived state — compute it directly, don't store in useState
     const bmi = useMemo(() => {
         const w = parseFloat(weight);
         const h = parseFloat(height);

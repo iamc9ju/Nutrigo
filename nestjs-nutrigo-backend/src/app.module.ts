@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -14,6 +14,7 @@ import { HealthMetricsModule } from './health-metrics/health-metrics.module';
 import { AllergiesModule } from './allergies/allergies.module';
 import { NutritionistsModule } from './nutritionists/nutritionists.module';
 import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis';
 
 @Module({
   imports: [
@@ -25,16 +26,24 @@ import { APP_GUARD } from '@nestjs/core';
         JWT_SECRET: Joi.string().required(),
         PORT: Joi.number().default(4000),
         FRONTEND_URL: Joi.string().default('http://localhost:3000'),
+        REDIS_URL: Joi.string().default('redis://localhost:6379'),
       }),
     }),
     MyLoggerModule,
-    ThrottlerModule.forRoot({
-      throttlers: [
-        {
-          ttl: 60000,
-          limit: 10,
-        },
-      ],
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [
+          {
+            ttl: 60000,
+            limit: 10,
+          },
+        ],
+        storage: new ThrottlerStorageRedisService(
+          config.getOrThrow<string>('REDIS_URL'),
+        ),
+      }),
     }),
     HealthModule,
     AuthModule,

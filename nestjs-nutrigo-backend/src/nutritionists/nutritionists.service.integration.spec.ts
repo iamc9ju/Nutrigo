@@ -1,19 +1,26 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NutritionistsService } from './nutritionists.service';
+import { NutritionistSchedulesService } from './nutritionist-schedules.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ConfigModule } from '@nestjs/config';
 
 describe('NutritionistsService Integration - Concurrency & Constraints', () => {
-  let service: NutritionistsService;
+  let schedulesService: NutritionistSchedulesService;
   let prisma: PrismaService;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot()],
-      providers: [NutritionistsService, PrismaService],
+      providers: [
+        NutritionistsService,
+        NutritionistSchedulesService,
+        PrismaService,
+      ],
     }).compile();
 
-    service = module.get<NutritionistsService>(NutritionistsService);
+    schedulesService = module.get<NutritionistSchedulesService>(
+      NutritionistSchedulesService,
+    );
     prisma = module.get<PrismaService>(PrismaService);
   });
 
@@ -54,7 +61,7 @@ describe('NutritionistsService Integration - Concurrency & Constraints', () => {
       };
 
       const concurrentRequests = Array.from({ length: 5 }).map(() =>
-        service.createSchedule(user.userId, dto).catch((err: unknown) => err),
+        schedulesService.createSchedule(user.userId, dto).catch(() => null),
       );
 
       await Promise.all(concurrentRequests);

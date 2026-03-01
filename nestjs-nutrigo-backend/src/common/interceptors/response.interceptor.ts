@@ -4,8 +4,10 @@ import {
   ExecutionContext,
   CallHandler,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { RESPONSE_MESSAGE_METADATA } from '../constants/response.constants';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -25,6 +27,8 @@ export class ResponseInterceptor<T> implements NestInterceptor<
   T,
   ApiResponse<T>
 > {
+  constructor(private readonly reflector: Reflector) {}
+
   intercept(
     context: ExecutionContext,
     next: CallHandler,
@@ -32,7 +36,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<
     return next.handle().pipe(
       map((rawData: unknown) => {
         const data = (rawData || {}) as ResponseWithMeta;
-        const { message, meta, ...rest } = data;
+        const { message: explicitMessage, meta, ...rest } = data;
 
         let extractedMeta: Record<string, unknown> | undefined = meta;
         let responseData: unknown = rest.data ?? rest;
@@ -53,11 +57,21 @@ export class ResponseInterceptor<T> implements NestInterceptor<
           !Array.isArray(responseData) &&
           Object.keys(responseData as Record<string, unknown>).length === 0;
 
+        const decoratorMessage = this.reflector.getAllAndOverride<
+          string | undefined
+        >(RESPONSE_MESSAGE_METADATA, [
+          context.getHandler(),
+          context.getClass(),
+        ]);
+
+        const finalMessage =
+          decoratorMessage || explicitMessage || 'Operation successful';
+
         return {
           success: true,
           data: (isEmptyObject ? null : responseData) as T,
           ...(extractedMeta ? { meta: extractedMeta } : {}),
-          message: message || 'Operation successful',
+          message: finalMessage,
         };
       }),
     );

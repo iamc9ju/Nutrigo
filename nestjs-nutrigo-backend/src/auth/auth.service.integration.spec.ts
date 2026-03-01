@@ -99,6 +99,12 @@ describe('AuthService Integration - Race Conditions & Security Boundaries', () =
 
       expect(legitimateRefreshRes.accessToken).toBeDefined();
 
+      const [tokenId] = loginRes.refreshToken.split('.');
+      await prisma.refreshToken.update({
+        where: { refreshTokenId: tokenId },
+        data: { usedAt: new Date(Date.now() - 61000) },
+      });
+
       await expect(
         authService.refreshAccessToken(loginRes.refreshToken),
       ).rejects.toThrow('Token reuse detected - all sessions revoked');
