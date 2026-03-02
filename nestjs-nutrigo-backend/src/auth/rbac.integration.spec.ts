@@ -1,6 +1,6 @@
 // ลบของเก่าออก แล้วใช้โค้ดนี้แทนใน src/auth/rbac.integration.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { DynamicModule, INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthModule } from './auth.module';
@@ -19,7 +19,7 @@ describe('Role-Based Access Control (RBAC) - Integration Test', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
-        ConfigModule.forRoot({ isGlobal: true }),
+        ConfigModule.forRoot({ isGlobal: true }) as unknown as DynamicModule,
         AuthModule,
         NutritionistsModule,
         PatientsModule,
