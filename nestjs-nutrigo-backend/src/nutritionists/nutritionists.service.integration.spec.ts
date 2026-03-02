@@ -3,6 +3,7 @@ import { NutritionistsService } from './nutritionists.service';
 import { NutritionistSchedulesService } from './nutritionist-schedules.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ConfigModule } from '@nestjs/config';
+import { DynamicModule } from '@nestjs/common';
 
 describe('NutritionistsService Integration - Concurrency & Constraints', () => {
   let schedulesService: NutritionistSchedulesService;
@@ -10,7 +11,7 @@ describe('NutritionistsService Integration - Concurrency & Constraints', () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot()],
+      imports: [ConfigModule.forRoot() as unknown as DynamicModule],
       providers: [
         NutritionistsService,
         NutritionistSchedulesService,

@@ -77,4 +77,20 @@ export const ErrorMessages = {
     TOKEN_REUSE_DETECTED: 'Token reuse detected - all sessions revoked',
     USER_NOT_FOUND: 'User not found',
   },
+  PATIENTS: {
+    PROFILE_INCOMPLETE:
+      'Patient profile not found or incomplete. Please complete your profile first.',
+  },
+  NUTRITIONISTS: {
+    NOT_FOUND_OR_APPROVED: 'Nutritionist not found or not approved',
+  },
+  APPOINTMENTS: {
+    TIME_SLOT_TAKEN: 'This time slot has already been booked',
+    PAST_TIME_NOT_ALLOWED: 'Cannot book an appointment in the past',
+    OUTSIDE_WORKING_HOURS:
+      'The requested time is outside the nutritionist working hours',
+    NUTRITIONIST_ON_LEAVE:
+      'The nutritionist is on leave during the requested time',
+    SCHEDULE_NOT_FOUND: 'Nutritionist does not work on this day',
+  },
 } as const;

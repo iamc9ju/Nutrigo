@@ -1,3 +1,4 @@
+import { DynamicModule } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -19,7 +20,7 @@ describe('AuthService Integration - Race Conditions & Security Boundaries', () =
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
-        ConfigModule.forRoot(),
+        ConfigModule.forRoot() as unknown as DynamicModule,
         JwtModule.register({ secret: 'test-secret' }),
       ],
       providers: [AuthService, PrismaService],
