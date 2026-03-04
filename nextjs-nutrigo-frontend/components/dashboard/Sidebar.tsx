@@ -26,6 +26,7 @@ export default function Sidebar() {
   const menuItems = [
     { icon: LayoutGrid, label: "แดชบอร์ด", href: "/dashboard" },
     { icon: Heart, label: "บริการโภชนาการ", href: "/dashboard/nutrition" },
+    { icon: Calendar, label: "การนัดหมาย", href: "/dashboard/appointments", roles: ["patient"] },
     { icon: Calendar, label: "ปฏิทิน", href: "/dashboard/calendar" },
     { icon: MessageSquare, label: "ข้อความ", href: "/dashboard/messages" },
     { icon: Utensils, label: "เมนูสุขภาพ", href: "/dashboard/menu" },
@@ -34,6 +35,9 @@ export default function Sidebar() {
     { icon: BarChart2, label: "ความคืบหน้า", href: "/dashboard/progress" },
     { icon: UserCog, label: "ตั้งค่า", href: "/dashboard/setting" },
   ];
+
+  const userRole = useAuthStore((state) => state.user?.role);
+  const filteredMenuItems = menuItems.filter(item => !item.roles || item.roles.includes(userRole as string));
 
   const handleLogout = async () => {
     try {
@@ -63,24 +67,23 @@ export default function Sidebar() {
         <div className="w-8 h-8 bg-[#C6E065] rounded-lg flex items-center justify-center">
           <span className="text-lg">🍽️</span>
         </div>
-        {}
+        { }
         <span className="font-black text-[#3d3522] text-xl tracking-wide">
           NutriGo
         </span>
       </div>
 
       <nav className="flex-1 space-y-2">
-        {menuItems.map((item) => {
+        {filteredMenuItems.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 ${
-                isActive
-                  ? "bg-[#C6E065] text-[#3d3522] font-bold shadow-md"
-                  : "text-gray-500 hover:bg-gray-50 hover:text-[#3d3522]"
-              }`}
+              className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 ${isActive
+                ? "bg-[#C6E065] text-[#3d3522] font-bold shadow-md"
+                : "text-gray-500 hover:bg-gray-50 hover:text-[#3d3522]"
+                }`}
             >
               <item.icon
                 className={`w-5 h-5 ${isActive ? "text-[#3d3522]" : "text-gray-400"}`}
@@ -91,7 +94,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {}
+      { }
       <button
         onClick={handleLogout}
         className="flex items-center gap-3 px-4 py-3 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all mt-auto"

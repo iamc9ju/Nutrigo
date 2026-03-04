@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider   = "prisma-client-js"
   engineType = "library"
@@ -11,6 +5,193 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+model User {
+  userId        String         @id @default(uuid()) @map("user_id") @db.Uuid
+  email         String         @unique @map("email") @db.VarChar(100)
+  passwordHash  String         @map("password_hash") @db.VarChar(255)
+  phone         String?        @unique @map("phone") @db.VarChar(20)
+  role          UserRole       @map("role")
+  is2faEnabled  Boolean        @default(false) @map("is_2fa_enabled")
+  twoFaSecret   String?        @map("two_fa_secret") @db.VarChar(100)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  deletedAt     DateTime?      @map("deleted_at")
+  nutritionist  Nutritionist?
+  patient       Patient?
+  refreshTokens RefreshToken[]
+
+  @@index([email])
+  @@index([phone])
+  @@map("users")
+}
+
+model Patient {
+  patientId         String           @id @default(uuid()) @map("patient_id") @db.Uuid
+  userId            String           @unique @map("user_id") @db.Uuid
+  firstName         String           @map("first_name") @db.VarChar(100)
+  lastName          String           @map("last_name") @db.VarChar(100)
+  dateOfBirth       DateTime?        @map("date_of_birth") @db.Date
+  gender            GenderType?      @map("gender")
+  bloodType         String?          @map("blood_type") @db.VarChar(5)
+  chronicDiseases   String[]         @map("chronic_diseases")
+  isProfileComplete Boolean          @default(false) @map("is_profile_complete")
+  deletedAt         DateTime?        @map("deleted_at")
+  appointments      Appointment[]
+  healthMetrics     HealthMetric[]
+  patientAllergies  PatientAllergy[]
+  user              User             @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  reviews           Review[]
+
+  @@map("patients")
+}
+
+model Nutritionist {
+  nutritionistId          String                  @id @default(uuid()) @map("nutritionist_id") @db.Uuid
+  userId                  String                  @unique @map("user_id") @db.Uuid
+  firstName               String                  @map("first_name") @db.VarChar(100)
+  lastName                String                  @map("last_name") @db.VarChar(100)
+  licenseNumber           String?                 @unique @map("license_number") @db.VarChar(50)
+  licenseDocumentUrl      String?                 @map("license_document_url") @db.VarChar(500)
+  consultationFee         Decimal                 @default(500.00) @map("consultation_fee") @db.Decimal(10, 2)
+  verificationStatus      VerificationStatus      @default(pending) @map("verification_status")
+  verifiedAt              DateTime?               @map("verified_at")
+  verifiedBy              String?                 @map("verified_by") @db.Uuid
+  deletedAt               DateTime?               @map("deleted_at")
+  createdAt               DateTime                @default(now()) @map("created_at")
+  appointments            Appointment[]
+  nutritionistLeaves      NutritionistLeave[]
+  nutritionistSchedules   NutritionistSchedule[]
+  nutritionistSpecialties NutritionistSpecialty[]
+  user                    User                    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  reviews                 Review[]
+
+  @@map("nutritionists")
+}
+
+model PatientAllergy {
+  patientAllergyId Int             @id @default(autoincrement()) @map("patient_allergy_id")
+  patientId        String          @map("patient_id") @db.Uuid
+  ingredientName   String          @map("ingredient_name") @db.VarChar(100)
+  severity         AllergySeverity @default(moderate) @map("severity")
+  note             String?         @map("note")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  patient          Patient         @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+
+  @@index([patientId])
+  @@map("patient_allergies")
+}
+
+model HealthMetric {
+  healthMetricId Int      @id @default(autoincrement()) @map("health_metric_id")
+  patientId      String   @map("patient_id") @db.Uuid
+  weightKg       Decimal? @map("weight_kg") @db.Decimal(5, 2)
+  heightCm       Decimal? @map("height_cm") @db.Decimal(5, 2)
+  bodyFatPercent Decimal? @map("body_fat_percent") @db.Decimal(4, 1)
+  recordedAt     DateTime @default(now()) @map("recorded_at")
+  patient        Patient  @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+
+  @@map("health_metrics")
+}
+
+model RefreshToken {
+  userId         String    @map("user_id") @db.Uuid
+  secretHash     String    @unique @map("token_hash") @db.VarChar(255)
+  deviceId       String?   @map("device_id") @db.VarChar(255)
+  ipAddress      String?   @map("ip_address") @db.VarChar(45)
+  userAgent      String?   @map("user_agent")
+  expiresAt      DateTime  @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  revokedAt      DateTime? @map("revoked_at")
+  family         String?   @map("family") @db.Uuid
+  refreshTokenId String    @id @default(uuid()) @map("refresh_token_id") @db.Uuid
+  usedAt         DateTime? @map("used_at")
+  user           User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([secretHash])
+  @@index([family])
+  @@map("refresh_tokens")
+}
+
+model Specialty {
+  specialtyId   Int                     @id @default(autoincrement()) @map("specialty_id")
+  name          String                  @db.VarChar(100)
+  description   String?
+  nutritionists NutritionistSpecialty[]
+
+  @@map("specialties")
+}
+
+model NutritionistSpecialty {
+  nutritionistId String       @map("nutritionist_id") @db.Uuid
+  specialtyId    Int          @map("specialty_id")
+  nutritionist   Nutritionist @relation(fields: [nutritionistId], references: [nutritionistId], onDelete: Cascade)
+  specialty      Specialty    @relation(fields: [specialtyId], references: [specialtyId], onDelete: Cascade)
+
+  @@id([nutritionistId, specialtyId])
+  @@map("nutritionist_specialties")
+}
+
+model NutritionistSchedule {
+  nutritionistScheduleId Int          @id @default(autoincrement()) @map("nutritionist_schedule_id")
+  nutritionistId         String       @map("nutritionist_id") @db.Uuid
+  dayOfWeek              Int          @map("day_of_week")
+  startTime              String       @map("start_time")
+  endTime                String       @map("end_time")
+  isAvailable            Boolean      @default(true) @map("is_available")
+  nutritionist           Nutritionist @relation(fields: [nutritionistId], references: [nutritionistId], onDelete: Cascade)
+
+  @@unique([nutritionistId, dayOfWeek])
+  @@map("nutritionist_schedules")
+}
+
+model NutritionistLeave {
+  nutritionistLeaveId Int          @id @default(autoincrement()) @map("nutritionist_leave_id")
+  nutritionistId      String       @map("nutritionist_id") @db.Uuid
+  leaveDate           DateTime     @map("leave_date") @db.Date
+  isFullDay           Boolean      @default(true) @map("is_full_day")
+  newStartTime        String?      @map("new_start_time")
+  newEndTime          String?      @map("new_end_time")
+  nutritionist        Nutritionist @relation(fields: [nutritionistId], references: [nutritionistId], onDelete: Cascade)
+
+  @@unique([nutritionistId, leaveDate])
+  @@map("nutritionist_leaves")
+}
+
+model Review {
+  reviewId       Int          @id @default(autoincrement()) @map("review_id")
+  appointmentId  String       @unique @map("appointment_id") @db.Uuid
+  patientId      String       @map("patient_id") @db.Uuid
+  nutritionistId String       @map("nutritionist_id") @db.Uuid
+  rating         Int
+  comment        String?
+  createdAt      DateTime     @default(now()) @map("created_at")
+  nutritionist   Nutritionist @relation(fields: [nutritionistId], references: [nutritionistId], onDelete: Cascade)
+  patient        Patient      @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+model Appointment {
+  appointmentId  String            @id @default(uuid()) @map("appointment_id") @db.Uuid
+  patientId      String            @map("patient_id") @db.Uuid
+  nutritionistId String            @map("nutritionist_id") @db.Uuid
+  startTime      DateTime          @map("start_time")
+  endTime        DateTime          @map("end_time")
+  status         AppointmentStatus @default(pending)
+  type           AppointmentType   @default(online)
+  chargeId       String?           @unique @map("charge_id") @db.VarChar(100)
+  amount         Decimal?          @map("amount") @db.Decimal(10, 2)
+  qrCodeUrl      String?           @map("qr_code_url") @db.VarChar(500)
+  createdAt      DateTime          @default(now()) @map("created_at")
+  deletedAt      DateTime?         @map("deleted_at")
+  nutritionist   Nutritionist      @relation(fields: [nutritionistId], references: [nutritionistId], onDelete: Cascade)
+  patient        Patient           @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([nutritionistId])
+  @@map("appointment")
 }
 
 enum UserRole {
@@ -46,192 +227,4 @@ enum AppointmentStatus {
   confirmed
   completed
   cancelled
-}
-
-model User {
-  userId       String    @id @default(uuid()) @map("user_id") @db.Uuid
-  email        String    @unique @map("email") @db.VarChar(100)
-  passwordHash String    @map("password_hash") @db.VarChar(255)
-  phone        String?   @unique @map("phone") @db.VarChar(20)
-  role         UserRole  @map("role")
-  is2faEnabled Boolean   @default(false) @map("is_2fa_enabled")
-  twoFaSecret  String?   @map("two_fa_secret") @db.VarChar(100)
-  createdAt    DateTime  @default(now()) @map("created_at")
-  deletedAt    DateTime? @map("deleted_at")
-
-  // Relations
-  patient       Patient?
-  nutritionist  Nutritionist?
-  refreshTokens RefreshToken[]
-
-  @@index([email])
-  @@index([phone])
-  @@map("users")
-}
-
-model Patient {
-  patientId         String           @id @default(uuid()) @map("patient_id") @db.Uuid
-  userId            String           @unique @map("user_id") @db.Uuid
-  user              User             @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  firstName         String           @map("first_name") @db.VarChar(100)
-  lastName          String           @map("last_name") @db.VarChar(100)
-  dateOfBirth       DateTime?        @map("date_of_birth") @db.Date
-  gender            GenderType?      @map("gender")
-  bloodType         String?          @map("blood_type") @db.VarChar(5)
-  chronicDiseases   String[]         @map("chronic_diseases")
-  isProfileComplete Boolean          @default(false) @map("is_profile_complete")
-  deletedAt         DateTime?        @map("deleted_at")
-  patientAllergies  PatientAllergy[]
-  healthMetrics     HealthMetric[]
-  reviews           Review[]
-  appointments      Appointment[]
-
-  @@map("patients")
-}
-
-model Nutritionist {
-  nutritionistId     String             @id @default(uuid()) @map("nutritionist_id") @db.Uuid
-  userId             String             @unique @map("user_id") @db.Uuid
-  firstName          String             @map("first_name") @db.VarChar(100)
-  lastName           String             @map("last_name") @db.VarChar(100)
-  licenseNumber      String?            @unique @map("license_number") @db.VarChar(50)
-  licenseDocumentUrl String?            @map("license_document_url") @db.VarChar(500)
-  consultationFee    Decimal            @default(500.00) @map("consultation_fee") @db.Decimal(10, 2)
-  verificationStatus VerificationStatus @default(pending) @map("verification_status")
-  verifiedAt         DateTime?          @map("verified_at")
-  verifiedBy         String?            @map("verified_by") @db.Uuid
-  createdAt          DateTime           @default(now()) @map("created_at")
-  deletedAt          DateTime?          @map("deleted_at")
-
-  user                    User                    @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  nutritionistSpecialties NutritionistSpecialty[]
-  nutritionistSchedules   NutritionistSchedule[]
-  reviews                 Review[]
-  appointments            Appointment[]
-  nutritionistLeaves      NutritionistLeave[]
-
-  @@map("nutritionists")
-}
-
-model PatientAllergy {
-  patientAllergyId Int             @id @default(autoincrement()) @map("patient_allergy_id")
-  patientId        String          @map("patient_id") @db.Uuid
-  patient          Patient         @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
-  ingredientName   String          @map("ingredient_name") @db.VarChar(100)
-  severity         AllergySeverity @default(moderate) @map("severity")
-  note             String?         @map("note") @db.Text
-  createdAt        DateTime        @default(now()) @map("created_at")
-
-  @@index([patientId])
-  @@map("patient_allergies")
-}
-
-model HealthMetric {
-  healthMetricId Int      @id @default(autoincrement()) @map("health_metric_id")
-  patientId      String   @map("patient_id") @db.Uuid
-  patient        Patient  @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
-  weightKg       Decimal? @map("weight_kg") @db.Decimal(5, 2)
-  heightCm       Decimal? @map("height_cm") @db.Decimal(5, 2)
-  bodyFatPercent Decimal? @map("body_fat_percent") @db.Decimal(4, 1)
-  recordedAt     DateTime @default(now()) @map("recorded_at")
-
-  @@map("health_metrics")
-}
-
-model RefreshToken {
-  refreshTokenId String    @id @default(uuid()) @map("refresh_token_id") @db.Uuid
-  userId         String    @map("user_id") @db.Uuid
-  user           User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  secretHash     String    @unique @map("token_hash") @db.VarChar(255)
-  deviceId       String?   @map("device_id") @db.VarChar(255)
-  usedAt         DateTime? @map("used_at")
-  ipAddress      String?   @map("ip_address") @db.VarChar(45)
-  userAgent      String?   @map("user_agent") @db.Text
-  expiresAt      DateTime  @map("expires_at")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  revokedAt      DateTime? @map("revoked_at")
-  family         String?   @map("family") @db.Uuid
-
-  @@index([userId])
-  @@index([secretHash])
-  @@index([family])
-  @@map("refresh_tokens")
-}
-
-model Specialty {
-  specialtyId   Int                     @id @default(autoincrement()) @map("specialty_id")
-  name          String                  @db.VarChar(100)
-  description   String?                 @db.Text
-  nutritionists NutritionistSpecialty[]
-
-  @@map("specialties")
-}
-
-model NutritionistSpecialty {
-  nutritionistId String       @map("nutritionist_id") @db.Uuid
-  specialtyId    Int          @map("specialty_id")
-  nutritionist   Nutritionist @relation(fields: [nutritionistId], references: [nutritionistId], onDelete: Cascade)
-  specialty      Specialty    @relation(fields: [specialtyId], references: [specialtyId], onDelete: Cascade)
-
-  @@id([nutritionistId, specialtyId])
-  @@map("nutritionist_specialties")
-}
-
-model NutritionistSchedule {
-  nutritionistScheduleId Int          @id @default(autoincrement()) @map("nutritionist_schedule_id")
-  nutritionistId         String       @map("nutritionist_id") @db.Uuid
-  dayOfWeek              Int          @map("day_of_week")
-  startTime              String       @map("start_time") // TIME type
-  endTime                String       @map("end_time")
-  isAvailable            Boolean      @default(true) @map("is_available")
-  nutritionist           Nutritionist @relation(fields: [nutritionistId], references: [nutritionistId], onDelete: Cascade)
-
-  @@unique([nutritionistId, dayOfWeek])
-  @@map("nutritionist_schedules")
-}
-
-model NutritionistLeave {
-  nutritionistLeaveId Int      @id @default(autoincrement()) @map("nutritionist_leave_id")
-  nutritionistId      String   @map("nutritionist_id") @db.Uuid
-  leaveDate           DateTime @map("leave_date") @db.Date
-
-  isFullDay    Boolean @default(true) @map("is_full_day")
-  newStartTime String? @map("new_start_time")
-  newEndTime   String? @map("new_end_time")
-
-  nutritionist Nutritionist @relation(fields: [nutritionistId], references: [nutritionistId], onDelete: Cascade)
-
-  @@unique([nutritionistId, leaveDate])
-  @@map("nutritionist_leaves")
-}
-
-model Review {
-  reviewId       Int          @id @default(autoincrement()) @map("review_id")
-  appointmentId  String       @unique @map("appointment_id") @db.Uuid
-  patientId      String       @map("patient_id") @db.Uuid
-  nutritionistId String       @map("nutritionist_id") @db.Uuid
-  rating         Int
-  comment        String?      @db.Text
-  createdAt      DateTime     @default(now()) @map("created_at")
-  nutritionist   Nutritionist @relation(fields: [nutritionistId], references: [nutritionistId], onDelete: Cascade)
-  patient        Patient      @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
-
-  @@map("reviews")
-}
-
-model Appointment {
-  appointmentId  String            @id @default(uuid()) @map("appointment_id") @db.Uuid
-  patientId      String            @map("patient_id") @db.Uuid
-  patient        Patient           @relation(fields: [patientId], references: [patientId], onDelete: Restrict)
-  nutritionistId String            @map("nutritionist_id") @db.Uuid
-  nutritionist   Nutritionist      @relation(fields: [nutritionistId], references: [nutritionistId], onDelete: Restrict)
-  startTime      DateTime          @map("start_time")
-  endTime        DateTime          @map("end_time")
-  status         AppointmentStatus @default(pending)
-  type           AppointmentType   @default(online)
-  createdAt      DateTime          @default(now()) @map("created_at")
-  deletedAt      DateTime?         @map("deleted_at")
-
-  @@index([patientId])
-  @@index([nutritionistId])
 }

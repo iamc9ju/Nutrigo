@@ -47,7 +47,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     });
 
     const adapter = new PrismaPg(pool);
-    super({ adapter });
+    super({
+      adapter,
+      log: ['query', 'info', 'warn', 'error'],
+    });
 
     this.logger.log(`Prisma Service Initialized (Host: ${hostname} -> ${ip})`);
   }

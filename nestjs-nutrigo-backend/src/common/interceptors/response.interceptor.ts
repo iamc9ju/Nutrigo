@@ -35,6 +35,22 @@ export class ResponseInterceptor<T> implements NestInterceptor<
   ): Observable<ApiResponse<T>> {
     return next.handle().pipe(
       map((rawData: unknown) => {
+        const decoratorMessage = this.reflector.getAllAndOverride<
+          string | undefined
+        >(RESPONSE_MESSAGE_METADATA, [
+          context.getHandler(),
+          context.getClass(),
+        ]);
+
+        // If rawData is an array, preserve it as-is (e.g. availability slots)
+        if (Array.isArray(rawData)) {
+          return {
+            success: true,
+            data: rawData as unknown as T,
+            message: decoratorMessage || 'Operation successful',
+          };
+        }
+
         const data = (rawData || {}) as ResponseWithMeta;
         const { message: explicitMessage, meta, ...rest } = data;
 
@@ -56,13 +72,6 @@ export class ResponseInterceptor<T> implements NestInterceptor<
           typeof responseData === 'object' &&
           !Array.isArray(responseData) &&
           Object.keys(responseData as Record<string, unknown>).length === 0;
-
-        const decoratorMessage = this.reflector.getAllAndOverride<
-          string | undefined
-        >(RESPONSE_MESSAGE_METADATA, [
-          context.getHandler(),
-          context.getClass(),
-        ]);
 
         const finalMessage =
           decoratorMessage || explicitMessage || 'Operation successful';

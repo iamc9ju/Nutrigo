@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Param } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -49,5 +49,22 @@ export class AppointmentsController {
     @Body() dto: CreateAppointmentDto,
   ) {
     return this.appointmentsService.create(userId, dto);
+  }
+
+  @Get('me')
+  @Auth('patient')
+  @ApiOperation({ summary: 'ดึงข้อมูลการนัดหมายทั้งหมดของคนไข้' })
+  @ApiResponse({ status: 200, description: 'ดึงข้อมูลการนัดหมายสำเร็จ' })
+  async findAll(@CurrentUser('sub') userId: string) {
+    return this.appointmentsService.findAllForPatient(userId);
+  }
+
+  @Get(':id')
+  @Auth('patient', 'nutritionist')
+  @ApiOperation({ summary: 'ดึงข้อมูลการนัดหมายตาม ID' })
+  @ApiResponse({ status: 200, description: 'ดึงข้อมูลการนัดหมายสำเร็จ' })
+  @ApiResponse({ status: 404, description: 'ไม่พบการนัดหมาย' })
+  async findOne(@Param('id') id: string, @CurrentUser('sub') userId: string) {
+    return this.appointmentsService.findOne(id, userId);
   }
 }
