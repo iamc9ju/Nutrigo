@@ -76,12 +76,15 @@ export const ErrorMessages = {
     TOKEN_EXPIRED_REVOKED: 'Refresh token expired or revoked',
     TOKEN_REUSE_DETECTED: 'Token reuse detected - all sessions revoked',
     USER_NOT_FOUND: 'User not found',
+    FORBIDDEN: 'คุณไม่มีสิทธิ์เข้าถึงเนื้อหานี้',
   },
   PATIENTS: {
+    NOT_FOUND: 'Patient not found',
     PROFILE_INCOMPLETE:
       'Patient profile not found or incomplete. Please complete your profile first.',
   },
   NUTRITIONISTS: {
+    NOT_FOUND: 'Nutritionist not found',
     NOT_FOUND_OR_APPROVED: 'Nutritionist not found or not approved',
   },
   APPOINTMENTS: {
@@ -92,5 +95,6 @@ export const ErrorMessages = {
     NUTRITIONIST_ON_LEAVE:
       'The nutritionist is on leave during the requested time',
     SCHEDULE_NOT_FOUND: 'Nutritionist does not work on this day',
+    NOT_FOUND: 'Appointment not found',
   },
 } as const;

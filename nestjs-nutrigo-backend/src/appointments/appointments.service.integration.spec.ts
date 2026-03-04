@@ -2,9 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppointmentsService } from './appointments.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymentsService } from '../payments/payments.service';
-import { ConflictException } from '@nestjs/common';
-import { AppointmentStatus, AppointmentType } from '@prisma/client';
-import { TIME_CONSTANTS } from '../common/constants/time.constants';
+import { AppointmentType } from '@prisma/client';
 
 describe('AppointmentsService - Concurrency Integration', () => {
   let service: AppointmentsService;
@@ -18,7 +16,10 @@ describe('AppointmentsService - Concurrency Integration', () => {
         {
           provide: PaymentsService,
           useValue: {
-            createPaymentIntent: jest.fn().mockResolvedValue('pi_mock_secret'),
+            createPromptPayCharge: jest.fn().mockResolvedValue({
+              chargeId: 'chrg_mock_123',
+              qrCodeUrl: 'https://omise.co/qr_mock_123',
+            }),
           },
         },
       ],
@@ -88,17 +89,32 @@ describe('AppointmentsService - Concurrency Integration', () => {
       type: AppointmentType.online,
     };
 
-    const concurrentRequests = tempPatients.map((patient) =>
-      service.create(patient.userId, dto).catch((err) => err),
+    const concurrentRequests: Promise<object | string>[] = tempPatients.map(
+      (patient) =>
+        service
+          .create(patient.userId, dto)
+          .catch((err: unknown) =>
+            err instanceof Error ? err.message : String(err),
+          ),
+    );
+    const results = await Promise.all(concurrentRequests);
+    const successes = results.filter(
+      (r): r is { appointmentId: string } =>
+        typeof r === 'object' && r !== null && 'appointmentId' in r,
     );
 
-    const results = await Promise.all(concurrentRequests);
-    const successes = results.filter((r) => r.appointmentId);
-
-    const conflicts = results.filter((r) => !r.appointmentId);
+    const conflicts = results.filter(
+      (r) => !r || typeof r !== 'object' || !('appointmentId' in r),
+    );
     console.log(
       'CONCURRENCY TEST RESULTS:',
-      results.map((r) => r?.message || r?.code || r),
+      results.map((r: object | string): string => {
+        if (typeof r === 'object' && r !== null) {
+          const res = r as { message?: string; code?: string };
+          return res.message ?? res.code ?? JSON.stringify(r);
+        }
+        return String(r);
+      }),
     );
 
     expect(successes).toHaveLength(1);

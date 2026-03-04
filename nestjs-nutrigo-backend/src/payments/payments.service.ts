@@ -1,73 +1,75 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ErrorMessages } from 'src/common/constants/response.constants';
-import Stripe from 'stripe';
+import { ErrorMessages } from '../common/constants/response.constants';
+import {
+  IOmiseClient,
+  OmiseCurrency,
+  OmiseSourceType,
+} from './types/omise.type';
+import omise from 'omise';
+
 @Injectable()
 export class PaymentsService {
-  private readonly stripe: Stripe;
+  private readonly omiseClient: IOmiseClient;
 
   constructor(private readonly configService: ConfigService) {
-    const secretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
-    if (!secretKey) {
-      throw new InternalServerErrorException('Stripe key is not configured');
+    const secretKey = this.configService.get<string>('OMISE_SECRET_KEY');
+    const publicKey = this.configService.get<string>('OMISE_PUBLIC_KEY');
+    if (!secretKey || !publicKey) {
+      throw new InternalServerErrorException('Omise keys are not configured');
     }
 
-    this.stripe = new Stripe(secretKey, {
-      apiVersion: '2026-02-25.clover',
+    // Use a typed factory to avoid unsafe-call lint errors
+    const omiseFactory = omise as unknown as (config: {
+      publicKey: string;
+      secretKey: string;
+    }) => IOmiseClient;
+
+    this.omiseClient = omiseFactory({
+      publicKey,
+      secretKey,
     });
   }
 
-  //paymentIntention คือ object ที่เเทนการพยายามจ่ายเงินหนึ่งครั้ง
-  //BE สร้าง paymentIntention ส่ง client_secret ให้FE -> fe confirm payment ด้วย stripe.js
-  async createPaymentIntent(
+  async createPromptPayCharge(
     amount: number,
     metadata: Record<string, string>,
-  ): Promise<string> {
+  ): Promise<{ chargeId: string; qrCodeUrl: string }> {
     try {
-      const paymentIntent = await this.stripe.paymentIntents.create({
-        amount: amount,
-        currency: 'thb',
+      // Omise requires amount in subunits (satangs for THB)
+      const amountInSubunit = Math.round(amount * 100);
+
+      const charge = await this.omiseClient.charges.create({
+        amount: amountInSubunit,
+        currency: OmiseCurrency.THB,
+        source: {
+          type: OmiseSourceType.PROMPTPAY,
+        },
         metadata,
       });
-      if (!paymentIntent.client_secret) {
+
+      if (!charge.id || !charge.source?.scannable_code?.image?.download_uri) {
         throw new InternalServerErrorException(
-          'Failed to generate client secret',
+          'Failed to generate PromptPay QR code',
         );
       }
-      return paymentIntent.client_secret;
+
+      return {
+        chargeId: charge.id,
+        qrCodeUrl: charge.source.scannable_code.image.download_uri,
+      };
     } catch {
       throw new InternalServerErrorException(ErrorMessages.PROCESSING_ERROR);
     }
   }
 
-  constructWebhookEvent(
-    payload: string | Buffer,
-    signature: string,
-  ): Stripe.Event {
-    const webhookSecret = this.configService.getOrThrow<string>(
-      'STRIPE_WEBHOOK_SECRET',
-    );
-    if (!webhookSecret) {
-      throw new InternalServerErrorException(
-        'Webhook secret is not configured',
-      );
-    }
+  async retrieveCharge(chargeId: string) {
     try {
-      return this.stripe.webhooks.constructEvent(
-        //คำนวณHMACจากpayloadเทียบกับsignatureถ้าตรงคืนStripe.Event
-        payload,
-        signature,
-        webhookSecret,
+      return await this.omiseClient.charges.retrieve(chargeId);
+    } catch {
+      throw new InternalServerErrorException(
+        'Failed to retrieve payment details',
       );
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        throw new BadRequestException(`Webhook Error: ${err.message}`);
-      }
-      throw new BadRequestException('Webhook Error: Unknown');
     }
   }
 }

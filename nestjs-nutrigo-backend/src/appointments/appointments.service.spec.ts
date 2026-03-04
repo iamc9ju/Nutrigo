@@ -1,18 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymentsService } from '../payments/payments.service';
-import { AppointmentStatus, AppointmentType } from '@prisma/client';
+import { AppointmentType } from '@prisma/client';
 
 describe('AppointmentsService Unit Tests', () => {
   let service: AppointmentsService;
-  let prisma: jest.Mocked<Partial<PrismaService>>;
+  let prisma: Partial<PrismaService>;
   let paymentsService: jest.Mocked<Partial<PaymentsService>>;
 
   const mockTransaction = jest.fn();
@@ -22,12 +17,19 @@ describe('AppointmentsService Unit Tests', () => {
     jest.setSystemTime(new Date('2026-03-02T10:00:00Z')); // Current mocked time
 
     prisma = {
-      patient: { findUnique: jest.fn() } as any,
-      $transaction: mockTransaction as any,
-    };
+      patient: {
+        findUnique: jest.fn(),
+      } as unknown as jest.Mocked<Partial<PrismaService['patient']>>,
+      $transaction: mockTransaction as unknown as jest.Mocked<
+        PrismaService['$transaction']
+      >,
+      appointment: {
+        update: jest.fn(),
+      } as unknown as jest.Mocked<Partial<PrismaService['appointment']>>,
+    } as unknown as PrismaService;
 
     paymentsService = {
-      createPaymentIntent: jest.fn(),
+      createPromptPayCharge: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -87,20 +89,24 @@ describe('AppointmentsService Unit Tests', () => {
         fee: 500, // 500 THB
       });
 
-      (paymentsService.createPaymentIntent as jest.Mock).mockResolvedValueOnce(
-        'pi_secret_123',
-      );
+      (
+        paymentsService.createPromptPayCharge as jest.Mock
+      ).mockResolvedValueOnce({
+        chargeId: 'chrg_test_123',
+        qrCodeUrl: 'https://omise.co/qr_123',
+      });
 
       const result = await service.create('patient-id', validDto);
 
       expect(result).toEqual({
         appointmentId: 'appt-uuid',
         payment: {
-          clientSecret: 'pi_secret_123',
+          chargeId: 'chrg_test_123',
+          qrCodeUrl: 'https://omise.co/qr_123',
           amount: 500,
         },
       });
-      expect(paymentsService.createPaymentIntent).toHaveBeenCalledWith(50000, {
+      expect(paymentsService.createPromptPayCharge).toHaveBeenCalledWith(500, {
         appointmentId: 'appt-uuid',
         patientId: 'patient-uuid',
       });

@@ -11,6 +11,8 @@ import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { Prisma, AppointmentStatus } from '@prisma/client';
 import { TIME_CONSTANTS } from '../common/constants/time.constants';
 import { ErrorMessages } from '../common/constants/response.constants';
+import { format, getDay } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 
 @Injectable()
 export class AppointmentsService {
@@ -25,7 +27,6 @@ export class AppointmentsService {
       requestedStartTime.getTime() + TIME_CONSTANTS.MS.ONE_HOUR,
     );
 
-    // ป้องกันการจองย้อนหลัง (Past Time Validation)
     if (requestedStartTime.getTime() <= Date.now()) {
       throw new BadRequestException(
         ErrorMessages.APPOINTMENTS.PAST_TIME_NOT_ALLOWED,
@@ -55,24 +56,13 @@ export class AppointmentsService {
           );
         }
 
-        // --- 1. ตรวจสอบตารางงาน (NutritionistSchedule) ---
-        const dayOfWeek = requestedStartTime.getDay();
-        const startHour = requestedStartTime
-          .getHours()
-          .toString()
-          .padStart(2, '0');
-        const startMinute = requestedStartTime
-          .getMinutes()
-          .toString()
-          .padStart(2, '0');
-        const startString = `${startHour}:${startMinute}`;
+        const BANGKOK_TZ = 'Asia/Bangkok';
+        const startInBKK = toZonedTime(requestedStartTime, BANGKOK_TZ);
+        const endInBKK = toZonedTime(requestedEndTime, BANGKOK_TZ);
 
-        const endHour = requestedEndTime.getHours().toString().padStart(2, '0');
-        const endMinute = requestedEndTime
-          .getMinutes()
-          .toString()
-          .padStart(2, '0');
-        const endString = `${endHour}:${endMinute}`;
+        const dayOfWeek = getDay(startInBKK);
+        const startString = format(startInBKK, 'HH:mm');
+        const endString = format(endInBKK, 'HH:mm');
 
         const schedule = await tx.nutritionistSchedule.findFirst({
           where: {
@@ -94,14 +84,17 @@ export class AppointmentsService {
           );
         }
 
-        // --- 2. ตรวจสอบวันลา (NutritionistLeave) ---
-        const requestedDateISO = requestedStartTime.toISOString().split('T')[0];
-        const requestedDate = new Date(`${requestedDateISO}T00:00:00.000Z`);
+        const requestedDateStr = format(startInBKK, 'yyyy-MM-dd');
+        const leaveStart = new Date(`${requestedDateStr}T00:00:00.000+07:00`);
+        const leaveEnd = new Date(`${requestedDateStr}T23:59:59.999+07:00`);
 
         const leave = await tx.nutritionistLeave.findFirst({
           where: {
             nutritionistId: dto.nutritionistId,
-            leaveDate: requestedDate,
+            leaveDate: {
+              gte: leaveStart,
+              lte: leaveEnd,
+            },
           },
         });
 
@@ -111,7 +104,7 @@ export class AppointmentsService {
               ErrorMessages.APPOINTMENTS.NUTRITIONIST_ON_LEAVE,
             );
           }
-          // กรณีลางานแบบไม่เต็มวัน (Part-day leave) เวลาเปิดให้บริการจะเปลี่ยนไปตาม newStartTime/newEndTime
+
           if (
             !leave.newStartTime ||
             !leave.newEndTime ||
@@ -161,21 +154,130 @@ export class AppointmentsService {
       },
     );
 
-    const amount = Math.round(appointmentResult.fee * 100);
-    const clientSecret = await this.paymentsService.createPaymentIntent(
-      amount,
-      {
+    const amount = Math.round(appointmentResult.fee);
+    const { chargeId, qrCodeUrl } =
+      await this.paymentsService.createPromptPayCharge(amount, {
         appointmentId: appointmentResult.appointment.appointmentId,
         patientId: patient.patientId,
-      },
-    );
+      });
+
+    // Update appointment with chargeId, amount and qrCodeUrl
+    await this.prisma.appointment.update({
+      where: { appointmentId: appointmentResult.appointment.appointmentId },
+      data: { chargeId, amount, qrCodeUrl },
+    });
 
     return {
       appointmentId: appointmentResult.appointment.appointmentId,
       payment: {
-        clientSecret,
         amount: appointmentResult.fee,
+        chargeId,
+        qrCodeUrl,
       },
     };
+  }
+  async findAllForPatient(userId: string) {
+    const patient = await this.prisma.patient.findUnique({
+      where: { userId },
+    });
+
+    if (!patient) {
+      throw new NotFoundException(ErrorMessages.PATIENTS.NOT_FOUND);
+    }
+
+    return this.prisma.appointment.findMany({
+      where: { patientId: patient.patientId },
+      include: {
+        nutritionist: {
+          select: {
+            nutritionistId: true,
+            firstName: true,
+            lastName: true,
+            user: {
+              select: {
+                email: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { startTime: 'desc' },
+    });
+  }
+
+  async findOne(appointmentId: string, userId: string) {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { appointmentId },
+      include: {
+        nutritionist: {
+          select: {
+            nutritionistId: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        patient: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException(ErrorMessages.APPOINTMENTS.NOT_FOUND);
+    }
+
+    if (appointment.patient.userId !== userId) {
+      throw new ForbiddenException(ErrorMessages.AUTH.FORBIDDEN);
+    }
+
+    // If pending, include payment info from local database
+    if (
+      appointment.status === AppointmentStatus.pending &&
+      appointment.amount &&
+      appointment.qrCodeUrl
+    ) {
+      return {
+        ...appointment,
+        payment: {
+          amount: appointment.amount.toNumber(),
+          qrCodeUrl: appointment.qrCodeUrl,
+        },
+      };
+    }
+
+    return appointment;
+  }
+
+  async findAllForNutritionist(userId: string) {
+    const nutritionist = await this.prisma.nutritionist.findUnique({
+      where: { userId },
+    });
+
+    if (!nutritionist) {
+      throw new NotFoundException(ErrorMessages.NUTRITIONISTS.NOT_FOUND);
+    }
+
+    const appointments = await this.prisma.appointment.findMany({
+      where: { nutritionistId: nutritionist.nutritionistId },
+      include: {
+        patient: {
+          select: {
+            firstName: true,
+            lastName: true,
+            user: {
+              select: {
+                email: true,
+                phone: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { startTime: 'desc' },
+    });
+
+    return appointments;
   }
 }

@@ -1,5 +1,5 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import * as Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -37,7 +37,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
       throttlers: [
         {
           ttl: 60000,
-          limit: 10,
+          limit: 30,
         },
       ],
     }) as unknown as DynamicModule,

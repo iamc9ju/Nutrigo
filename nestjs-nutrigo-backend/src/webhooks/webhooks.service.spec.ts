@@ -1,15 +1,27 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { WebhookService } from './webhooks.service';
+import { WebhooksService } from './webhooks.service';
+import { PrismaService } from '../prisma/prisma.service';
 
-describe('WebhookService', () => {
-  let service: WebhookService;
+describe('WebhooksService', () => {
+  let service: WebhooksService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [WebhookService],
+      providers: [
+        WebhooksService,
+        {
+          provide: PrismaService,
+          useValue: {
+            appointment: {
+              findUnique: jest.fn(),
+              update: jest.fn(),
+            },
+          },
+        },
+      ],
     }).compile();
 
-    service = module.get<WebhookService>(WebhookService);
+    service = module.get<WebhooksService>(WebhooksService);
   });
 
   it('should be defined', () => {
