@@ -10,6 +10,12 @@ import {
   UseGuards,
   UnauthorizedException,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -20,17 +26,24 @@ import { ResponseMessage } from 'src/common/decorators/response-message.decorato
 import { SuccessMessages } from 'src/common/constants/response.constants';
 import { AUTH_CONFIG } from 'src/common/constants/time.constants';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('register')
+  @ApiOperation({ summary: 'ลงทะเบียนผู้ใช้ใหม่' })
+  @ApiResponse({ status: 201, description: 'ลงทะเบียนสำเร็จ' })
+  @ApiResponse({ status: 400, description: 'ข้อมูลไม่ครบ หรืออีเมลซ้ำ' })
   @ResponseMessage(SuccessMessages.AUTH.REGISTER)
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
   @Post('login')
+  @ApiOperation({ summary: 'เข้าสู่ระบบด้วยอีเมลและรหัสผ่าน' })
+  @ApiResponse({ status: 200, description: 'เข้าสู่ระบบสำเร็จ' })
+  @ApiResponse({ status: 401, description: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' })
   @ResponseMessage(SuccessMessages.AUTH.LOGIN)
   async login(
     @Body() dto: LoginDto,
@@ -60,6 +73,12 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @ApiOperation({ summary: 'ขอ Token ใหม่ด้วย Refresh Token' })
+  @ApiResponse({ status: 200, description: 'สร้าง Token ใหม่สำเร็จ' })
+  @ApiResponse({
+    status: 401,
+    description: 'Refresh Token ไม่ถูกต้องหรือหมดอายุ',
+  })
   @ResponseMessage(SuccessMessages.AUTH.REFRESH)
   async refresh(
     @Req() request: Request,
@@ -103,6 +122,8 @@ export class AuthController {
   }
 
   @Post('logout')
+  @ApiOperation({ summary: 'ลงชื่อออก และลบ Token' })
+  @ApiResponse({ status: 200, description: 'ลงชื่อออกสำเร็จ' })
   @ResponseMessage(SuccessMessages.AUTH.LOGOUT)
   async logout(
     @Req() request: Request,
@@ -124,6 +145,9 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('logout-all')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'ลงชื่อออกจากทุกอุปกรณ์' })
+  @ApiResponse({ status: 200, description: 'ลงชื่อออกสำเร็จในทุกอุปกรณ์' })
   @ResponseMessage(SuccessMessages.AUTH.LOGOUT_ALL)
   async logoutAll(@CurrentUser('sub') userId: string) {
     return this.authService.logoutAllDevices(userId);
@@ -131,6 +155,9 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'ดึงข้อมูลโปรไฟล์ของผู้ใช้งานปัจจุบัน' })
+  @ApiResponse({ status: 200, description: 'คืนค่าข้อมูลผู้ใช้ปัจจุบัน' })
   @ResponseMessage(SuccessMessages.AUTH.GET_ME)
   async getMe(@CurrentUser('sub') userId: string) {
     const data = await this.authService.getMe(userId);

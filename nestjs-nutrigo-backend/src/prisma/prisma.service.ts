@@ -1,4 +1,9 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -7,8 +12,12 @@ import { execSync } from 'child_process';
 import { URL } from 'url';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(PrismaService.name);
+  private pool: Pool;
 
   constructor() {
     const dbUrl = process.env.DATABASE_URL;
@@ -51,11 +60,24 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       adapter,
       log: ['query', 'info', 'warn', 'error'],
     });
+    this.pool = pool;
 
     this.logger.log(`Prisma Service Initialized (Host: ${hostname} -> ${ip})`);
   }
 
   async onModuleInit() {
     await this.$connect();
+  }
+
+  async $disconnect() {
+    await super.$disconnect();
+    if (this.pool) {
+      await this.pool.end();
+    }
+  }
+
+  async onModuleDestroy() {
+    await this.$disconnect();
+    this.logger.log('Prisma Service Destroyed and DB Pool Closed');
   }
 }

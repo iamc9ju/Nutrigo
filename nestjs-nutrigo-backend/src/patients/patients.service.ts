@@ -37,7 +37,6 @@ export class PatientsService {
       where: { userId },
       include: {
         user: true,
-        patientAllergies: true,
         healthMetrics: {
           orderBy: { recordedAt: 'desc' },
           take: 1,
@@ -62,7 +61,6 @@ export class PatientsService {
       bloodType: patient.bloodType,
       chronicDiseases: patient.chronicDiseases,
       isProfileComplete: patient.isProfileComplete,
-      allergies: patient.patientAllergies,
       healthMetrics: patient.healthMetrics[0],
     };
   }

@@ -221,6 +221,11 @@ export class AppointmentsService {
             userId: true,
           },
         },
+        chatRoom: {
+          select: {
+            chatRoomId: true,
+          },
+        },
       },
     });
 

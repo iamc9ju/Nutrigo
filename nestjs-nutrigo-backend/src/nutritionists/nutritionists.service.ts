@@ -12,7 +12,15 @@ export class NutritionistsService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(query: FindNutritionistsQueryDto) {
-    const { search, specialty, sortBy, page = 1, limit = 12 } = query;
+    const {
+      search,
+      specialty,
+      sortBy,
+      page = 1,
+      limit = 12,
+      maxFee,
+      minRating,
+    } = query;
     const skip = (page - 1) * limit;
 
     const where: Prisma.NutritionistWhereInput = {
@@ -33,6 +41,10 @@ export class NutritionistsService {
       };
     }
 
+    if (maxFee !== undefined) {
+      where.consultationFee = { lte: maxFee };
+    }
+
     let orderBy: Prisma.NutritionistOrderByWithRelationInput;
     switch (sortBy) {
       case SortBy.LOWEST_FEE:
@@ -44,54 +56,65 @@ export class NutritionistsService {
         break;
     }
 
-    const [nutritionists, total] = await Promise.all([
-      this.prisma.nutritionist.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy,
-        select: {
-          nutritionistId: true,
-          firstName: true,
-          lastName: true,
-          licenseNumber: true,
-          consultationFee: true,
-          verificationStatus: true,
-          user: {
-            select: {
-              email: true,
-            },
-          },
-          nutritionistSpecialties: {
-            select: {
-              specialty: { select: { specialtyId: true, name: true } },
-            },
-          },
-          reviews: {
-            select: { rating: true },
+    // Since filtering by aggregate minRating is complex in a single findMany with standard Prisma,
+    // and this is an MVP, we fetch a bit more or filter the returned paginated set.
+    // However, to keep it simple and accurate for small/medium datasets, we'll fetch all matching where
+    // condition, then filter by rating, then paginate.
+    // NOTE: This approach is NOT scalable for millions of records, but works for the current MVP.
+
+    const allNutritionists = await this.prisma.nutritionist.findMany({
+      where,
+      orderBy,
+      select: {
+        nutritionistId: true,
+        firstName: true,
+        lastName: true,
+        licenseNumber: true,
+        consultationFee: true,
+        verificationStatus: true,
+        user: {
+          select: {
+            email: true,
           },
         },
-      }),
-      this.prisma.nutritionist.count({ where }),
-    ]);
-
-    const formattedNutritionists = nutritionists.map((nutri) => {
-      const totalReviews = nutri.reviews.length;
-      const avgRating =
-        totalReviews > 0
-          ? nutri.reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
-          : 0;
-
-      const { reviews: _reviews, ...rest } = nutri;
-      return {
-        ...rest,
-        avgRating,
-        totalReviews,
-      };
+        nutritionistSpecialties: {
+          select: {
+            specialty: { select: { specialtyId: true, name: true } },
+          },
+        },
+        reviews: {
+          select: { rating: true },
+        },
+      },
     });
 
+    const formattedNutritionists = allNutritionists
+      .map((nutri) => {
+        const totalReviews = nutri.reviews.length;
+        const avgRating =
+          totalReviews > 0
+            ? nutri.reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+            : 0;
+
+        const { reviews: _reviews, ...rest } = nutri;
+        return {
+          ...rest,
+          avgRating,
+          totalReviews,
+        };
+      })
+      .filter((nutri) => {
+        if (minRating !== undefined) {
+          return nutri.avgRating >= minRating;
+        }
+        return true;
+      });
+
+    const total = formattedNutritionists.length;
+    const paginatedData = formattedNutritionists.slice(skip, skip + limit);
+
     return {
-      data: formattedNutritionists,
+      data: paginatedData,
       meta: {
         total,
         page,

@@ -72,7 +72,9 @@ describe('AppointmentsService - Concurrency Integration', () => {
       }),
     );
 
-    const requestedTime = new Date('2026-03-05T10:00:00Z');
+    const requestedTime = new Date();
+    requestedTime.setDate(requestedTime.getDate() + 1);
+    requestedTime.setHours(10, 0, 0, 0);
     await prisma.nutritionistSchedule.create({
       data: {
         nutritionistId: tempNutri.nutritionistId,

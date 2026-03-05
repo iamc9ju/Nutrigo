@@ -201,9 +201,42 @@ export default function NutritionistBookingPage() {
       });
 
       router.push(`/dashboard/payment?${params.toString()}`);
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "เกิดข้อผิดพลาด กรุณาลองใหม่";
+    } catch (error: unknown) {
+      let message = "เกิดข้อผิดพลาด กรุณาลองใหม่";
+
+      const err = error as { response?: { data?: { message?: string | string[] } } };
+
+      if (err?.response?.data?.message) {
+        const backendMessage = err.response.data.message;
+        if (
+          backendMessage ===
+          "Patient profile not found or incomplete. Please complete your profile first."
+        ) {
+          message =
+            "กรุณากรอกข้อมูลส่วนตัวในหน้าโปรไฟล์ให้ครบถ้วนก่อนทำการจองคิวครับ";
+        } else if (
+          backendMessage === "This time slot has already been booked"
+        ) {
+          message = "เวลานี้ถูกจองไปแล้ว กรุณาเลือกเวลาอื่น";
+        } else if (
+          backendMessage ===
+          "The requested time is outside the nutritionist working hours"
+        ) {
+          message = "เวลาที่เลือกอยู่นอกเวลาทำการของนักโภชนาการ";
+        } else if (
+          backendMessage ===
+          "The nutritionist is on leave during the requested time"
+        ) {
+          message = "นักโภชนาการลางานในเวลาที่เลือก";
+        } else {
+          message = Array.isArray(backendMessage)
+            ? backendMessage.join(", ")
+            : backendMessage;
+        }
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+
       Swal.fire({
         title: "จองไม่สำเร็จ",
         text: message,

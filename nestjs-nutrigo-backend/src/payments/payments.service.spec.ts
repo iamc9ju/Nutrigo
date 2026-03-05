@@ -5,7 +5,6 @@ import { PaymentsService } from './payments.service';
 import { ErrorMessages } from '../common/constants/response.constants';
 import { IOmiseClient } from './types/omise.type';
 
-// Mock Omise SDK completely
 jest.mock('omise', () => {
   return jest.fn().mockImplementation(() => ({
     charges: {

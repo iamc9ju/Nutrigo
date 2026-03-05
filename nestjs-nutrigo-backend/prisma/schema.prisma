@@ -18,8 +18,10 @@ model User {
   createdAt     DateTime       @default(now()) @map("created_at")
   deletedAt     DateTime?      @map("deleted_at")
   nutritionist  Nutritionist?
-  patient       Patient?
+  foodPartner   FoodPartner?
   refreshTokens RefreshToken[]
+  chatMessages  ChatMessage[]
+  patient       Patient?
 
   @@index([email])
   @@index([phone])
@@ -27,20 +29,19 @@ model User {
 }
 
 model Patient {
-  patientId         String           @id @default(uuid()) @map("patient_id") @db.Uuid
-  userId            String           @unique @map("user_id") @db.Uuid
-  firstName         String           @map("first_name") @db.VarChar(100)
-  lastName          String           @map("last_name") @db.VarChar(100)
-  dateOfBirth       DateTime?        @map("date_of_birth") @db.Date
-  gender            GenderType?      @map("gender")
-  bloodType         String?          @map("blood_type") @db.VarChar(5)
-  chronicDiseases   String[]         @map("chronic_diseases")
-  isProfileComplete Boolean          @default(false) @map("is_profile_complete")
-  deletedAt         DateTime?        @map("deleted_at")
+  patientId         String         @id @default(uuid()) @map("patient_id") @db.Uuid
+  userId            String         @unique @map("user_id") @db.Uuid
+  firstName         String         @map("first_name") @db.VarChar(100)
+  lastName          String         @map("last_name") @db.VarChar(100)
+  dateOfBirth       DateTime?      @map("date_of_birth") @db.Date
+  gender            GenderType?    @map("gender")
+  bloodType         String?        @map("blood_type") @db.VarChar(5)
+  chronicDiseases   String[]       @map("chronic_diseases")
+  isProfileComplete Boolean        @default(false) @map("is_profile_complete")
+  deletedAt         DateTime?      @map("deleted_at")
   appointments      Appointment[]
   healthMetrics     HealthMetric[]
-  patientAllergies  PatientAllergy[]
-  user              User             @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  user              User           @relation(fields: [userId], references: [userId], onDelete: Cascade)
   reviews           Review[]
 
   @@map("patients")
@@ -67,19 +68,6 @@ model Nutritionist {
   reviews                 Review[]
 
   @@map("nutritionists")
-}
-
-model PatientAllergy {
-  patientAllergyId Int             @id @default(autoincrement()) @map("patient_allergy_id")
-  patientId        String          @map("patient_id") @db.Uuid
-  ingredientName   String          @map("ingredient_name") @db.VarChar(100)
-  severity         AllergySeverity @default(moderate) @map("severity")
-  note             String?         @map("note")
-  createdAt        DateTime        @default(now()) @map("created_at")
-  patient          Patient         @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
-
-  @@index([patientId])
-  @@map("patient_allergies")
 }
 
 model HealthMetric {
@@ -182,21 +170,84 @@ model Appointment {
   status         AppointmentStatus @default(pending)
   type           AppointmentType   @default(online)
   chargeId       String?           @unique @map("charge_id") @db.VarChar(100)
-  amount         Decimal?          @map("amount") @db.Decimal(10, 2)
-  qrCodeUrl      String?           @map("qr_code_url") @db.VarChar(500)
   createdAt      DateTime          @default(now()) @map("created_at")
   deletedAt      DateTime?         @map("deleted_at")
+  amount         Decimal?          @map("amount") @db.Decimal(10, 2)
+  qrCodeUrl      String?           @map("qr_code_url") @db.VarChar(500)
   nutritionist   Nutritionist      @relation(fields: [nutritionistId], references: [nutritionistId], onDelete: Cascade)
   patient        Patient           @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+  chatRoom       ChatRoom?
 
   @@index([patientId])
   @@index([nutritionistId])
-  @@map("appointment")
+  @@map("appointments")
+}
+
+model ChatRoom {
+  chatRoomId    String        @id @default(uuid()) @map("chat_room_id") @db.Uuid
+  appointmentId String        @unique @map("appointment_id") @db.Uuid
+  createdAt     DateTime      @default(now()) @map("created_at")
+  appointment   Appointment   @relation(fields: [appointmentId], references: [appointmentId], onDelete: Cascade)
+  messages      ChatMessage[]
+
+  @@map("chat_rooms")
+}
+
+model ChatMessage {
+  chatMessageId String      @id @default(uuid()) @map("chat_message_id") @db.Uuid
+  chatRoomId    String      @map("chat_room_id") @db.Uuid
+  senderId      String      @map("sender_id") @db.Uuid
+  message       String      @db.Text
+  type          MessageType @default(text)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  chatRoom      ChatRoom    @relation(fields: [chatRoomId], references: [chatRoomId], onDelete: Cascade)
+  sender        User        @relation(fields: [senderId], references: [userId], onDelete: Cascade)
+
+  @@map("chat_messages")
+}
+
+model FoodPartner {
+  foodPartnerId  Int      @id @default(autoincrement()) @map("food_partner_id")
+  userId         String   @unique @map("user_id") @db.Uuid
+  name           String   @db.VarChar(100)
+  description    String?  @db.Text
+  address        String?  @db.Text
+  commissionRate Decimal  @default(15.00) @map("commission_rate") @db.Decimal(4, 2)
+  isActive       Boolean  @default(true) @map("is_active")
+  joinedAt       DateTime @default(now()) @map("joined_at")
+
+  // Relations
+  menuItems MenuItem[]
+  user      User       @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("food_partners")
+}
+
+model MenuItem {
+  menuItemId    Int      @id @default(autoincrement()) @map("menu_item_id")
+  foodPartnerId Int      @map("food_partner_id")
+  name          String   @db.VarChar(100)
+  description   String?  @db.Text
+  price         Decimal  @db.Decimal(10, 2)
+  imageUrl      String?  @map("image_url") @db.VarChar(255)
+  caloriesKcal  Int?     @map("calories_kcal")
+  proteinG      Decimal? @map("protein_g") @db.Decimal(5, 2)
+  carbsG        Decimal? @map("carbs_g") @db.Decimal(5, 2)
+  fatG          Decimal? @map("fat_g") @db.Decimal(5, 2)
+  stockQuantity Int      @default(100) @map("stock_quantity")
+  isOutOfStock  Boolean  @default(false) @map("is_out_of_stock")
+  isAvailable   Boolean  @default(true) @map("is_available")
+
+  // Relations
+  foodPartner FoodPartner @relation(fields: [foodPartnerId], references: [foodPartnerId], onDelete: Cascade)
+
+  @@map("menu_items")
 }
 
 enum UserRole {
   patient
   nutritionist
+  food_partner
   admin
 }
 
@@ -204,12 +255,6 @@ enum GenderType {
   male
   female
   other
-}
-
-enum AllergySeverity {
-  mild
-  moderate
-  severe
 }
 
 enum VerificationStatus {
@@ -227,4 +272,10 @@ enum AppointmentStatus {
   confirmed
   completed
   cancelled
+}
+
+enum MessageType {
+  text
+  image
+  food_card
 }

@@ -25,14 +25,6 @@ export const SuccessMessages = {
     PROFILE_RETRIEVED: 'Patient profile retrieved successfully',
   },
 
-  ALLERGIES: {
-    CREATED: 'Allergy record created successfully',
-    RETRIEVED_ALL: 'Allergy records retrieved successfully',
-    RETRIEVED_ONE: 'Allergy details retrieved successfully',
-    UPDATED: 'Allergy record updated successfully',
-    DELETED: 'Allergy record deleted successfully',
-  },
-
   HEALTH_METRICS: {
     CREATED: 'Health metric recorded successfully',
     RETRIEVED_ALL: 'Health metrics retrieved successfully',

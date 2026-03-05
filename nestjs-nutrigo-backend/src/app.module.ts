@@ -11,13 +11,14 @@ import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { PatientsModule } from './patients/patients.module';
 import { HealthMetricsModule } from './health-metrics/health-metrics.module';
-import { AllergiesModule } from './allergies/allergies.module';
 import { NutritionistsModule } from './nutritionists/nutritionists.module';
 import { APP_GUARD } from '@nestjs/core';
 
 import { PaymentsModule } from './payments/payments.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { ChatModule } from './chat/chat.module';
+import { MenuItemsModule } from './menu-items/menu-items.module';
 
 @Module({
   imports: [
@@ -44,12 +45,13 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     HealthModule,
     AuthModule,
     PatientsModule,
-    AllergiesModule,
     HealthMetricsModule,
     NutritionistsModule,
     PaymentsModule,
     AppointmentsModule,
     WebhooksModule,
+    ChatModule,
+    MenuItemsModule,
   ],
   controllers: [AppController],
   providers: [

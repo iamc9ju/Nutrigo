@@ -73,6 +73,13 @@ export class AuthService {
             lastName: dto.lastName,
           },
         });
+      } else if (dto.role === 'food_partner') {
+        await tx.foodPartner.create({
+          data: {
+            userId: user.userId,
+            name: `${dto.firstName} ${dto.lastName}`.trim(),
+          },
+        });
       }
 
       return user;
@@ -239,6 +246,7 @@ export class AuthService {
       include: {
         patient: userBase.role === 'patient',
         nutritionist: userBase.role === 'nutritionist',
+        foodPartner: userBase.role === 'food_partner',
       },
     });
 
@@ -252,7 +260,7 @@ export class AuthService {
   private async validateUser(email: string, pass: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
-      include: { patient: true, nutritionist: true },
+      include: { patient: true, nutritionist: true, foodPartner: true },
     });
 
     if (!user || !(await bcrypt.compare(pass, user.passwordHash))) {
@@ -311,10 +319,16 @@ export class AuthService {
     let lastName = '';
 
     const profile = user[role as keyof UserWithRelation];
-    if (profile && typeof profile === 'object' && 'firstName' in profile) {
-      firstName = (profile as { firstName: string; lastName: string })
-        .firstName;
-      lastName = (profile as { firstName: string; lastName: string }).lastName;
+    if (profile && typeof profile === 'object') {
+      if ('firstName' in profile) {
+        firstName = (profile as { firstName: string }).firstName;
+      }
+      if ('lastName' in profile) {
+        lastName = (profile as { lastName: string }).lastName;
+      }
+      if ('name' in profile) {
+        firstName = (profile as { name: string }).name;
+      }
     }
 
     return {

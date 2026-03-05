@@ -4,7 +4,7 @@ export interface User {
   userId: string;
   email: string;
   phone: string | null;
-  role: 'nutritionist' | 'patient' | 'admin';
+  role: 'nutritionist' | 'patient' | 'food_partner' | 'admin';
   is2faEnabled: boolean;
   twoFaSecret: string | null;
   createdAt: Date;
@@ -39,7 +39,19 @@ export interface Nutritionist {
   deletedAt: Date | null;
 }
 
+export interface FoodPartner {
+  foodPartnerId: number;
+  userId: string;
+  name: string;
+  description: string | null;
+  address: string | null;
+  commissionRate: Decimal;
+  isActive: boolean;
+  joinedAt: Date;
+}
+
 export interface UserWithRelation extends User {
   patient?: Patient | null;
   nutritionist?: Nutritionist | null;
+  foodPartner?: FoodPartner | null;
 }

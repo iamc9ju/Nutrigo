@@ -34,13 +34,23 @@ export class WebhooksService {
         return;
       }
 
-      await this.prisma.appointment.update({
-        where: { appointmentId: appointment.appointmentId },
-        data: { status: AppointmentStatus.confirmed },
+      await this.prisma.$transaction(async (tx) => {
+        const updatedAppointment = await tx.appointment.update({
+          where: { appointmentId: appointment.appointmentId },
+          data: { status: AppointmentStatus.confirmed },
+        });
+
+        await tx.chatRoom.create({
+          data: {
+            appointmentId: updatedAppointment.appointmentId,
+          },
+        });
+
+        return updatedAppointment;
       });
 
       this.logger.log(
-        `Successfully updated appointment ${appointment.appointmentId} status to confirmed`,
+        `Successfully updated appointment ${appointment.appointmentId} status to confirmed and created ChatRoom`,
       );
     } catch (error) {
       this.logger.error(

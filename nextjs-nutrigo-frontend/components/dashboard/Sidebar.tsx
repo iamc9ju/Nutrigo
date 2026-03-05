@@ -28,7 +28,7 @@ export default function Sidebar() {
     { icon: Heart, label: "บริการโภชนาการ", href: "/dashboard/nutrition" },
     { icon: Calendar, label: "การนัดหมาย", href: "/dashboard/appointments", roles: ["patient"] },
     { icon: Calendar, label: "ปฏิทิน", href: "/dashboard/calendar" },
-    { icon: MessageSquare, label: "ข้อความ", href: "/dashboard/messages" },
+    { icon: MessageSquare, label: "ข้อความ", href: "/dashboard/chat" },
     { icon: Utensils, label: "เมนูสุขภาพ", href: "/dashboard/menu" },
     { icon: BookOpen, label: "แผนการกิน", href: "/dashboard/meal-plan" },
     { icon: ScrollText, label: "บันทึกอาหาร", href: "/dashboard/food-diary" },
