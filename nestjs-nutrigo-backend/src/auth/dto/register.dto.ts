@@ -4,23 +4,20 @@ import {
   MinLength,
   IsEnum,
   IsOptional,
+  ValidateIf,
+  IsNotEmpty,
+  IsNumber,
+  Min,
 } from 'class-validator';
 import { UserRole } from '@prisma/client';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RegisterDto {
-  @ApiProperty({
-    example: 'user@example.com',
-    description: 'The email address of the user',
-  })
+  @ApiProperty({ example: 'user@example.com' })
   @IsEmail()
   email: string;
 
-  @ApiProperty({
-    example: 'password123',
-    description: 'The password of the user (min 8 characters)',
-    minLength: 8,
-  })
+  @ApiProperty({ example: 'password123', minLength: 8 })
   @IsString()
   @MinLength(8)
   password: string;
@@ -28,30 +25,53 @@ export class RegisterDto {
   @ApiProperty({
     enum: UserRole,
     example: UserRole.patient,
-    description: 'The role of the user (patient, nutritionist)',
+    description: 'Select role to see required fields',
   })
   @IsEnum(UserRole)
   role: UserRole;
 
-  @ApiProperty({
-    example: 'John',
-    description: 'The first name of the user',
-  })
+  @ApiPropertyOptional({ example: 'John' })
+  @ValidateIf(
+    (o) => o.role === UserRole.patient || o.role === UserRole.nutritionist,
+  )
+  @IsNotEmpty()
   @IsString()
-  firstName: string;
+  firstName?: string;
 
-  @ApiProperty({
-    example: 'Doe',
-    description: 'The last name of the user',
-  })
+  @ApiPropertyOptional({ example: 'Doe' })
+  @ValidateIf(
+    (o) => o.role === UserRole.patient || o.role === UserRole.nutritionist,
+  )
+  @IsNotEmpty()
   @IsString()
-  lastName: string;
+  lastName?: string;
 
-  @ApiProperty({
-    example: '0812345678',
-    description: 'The phone number of the user',
-    required: false,
-  })
+  @ApiPropertyOptional({ example: 'LIC-12345' })
+  @ValidateIf((o) => o.role === UserRole.nutritionist)
+  @IsNotEmpty()
+  @IsString()
+  licenseNumber?: string;
+
+  @ApiPropertyOptional({ example: 500 })
+  @ValidateIf((o) => o.role === UserRole.nutritionist)
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  consultationFee?: number;
+
+  @ApiPropertyOptional({ example: 'Healthy Bowl Shop' })
+  @ValidateIf((o) => o.role === UserRole.food_partner)
+  @IsNotEmpty()
+  @IsString()
+  partnerName?: string;
+
+  @ApiPropertyOptional({ example: '123 Sukhumvit, Bangkok' })
+  @ValidateIf((o) => o.role === UserRole.food_partner)
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @ApiPropertyOptional({ example: '0812345678' })
   @IsString()
   @IsOptional()
   phone?: string;

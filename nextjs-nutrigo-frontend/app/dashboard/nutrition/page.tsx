@@ -7,13 +7,13 @@ import { nutritionistApi } from "@/app/services/nutritionists";
 import { Search, SlidersHorizontal, Star } from "lucide-react";
 
 export default function NutritionistListPage() {
+
     const [nutritionists, setNutritionists] = useState<Nutritionist[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [sortBy, setSortBy] = useState("newest");
     const [maxFee, setMaxFee] = useState<number | "">("");
     const [minRating, setMinRating] = useState<number | "">("");
-
     useEffect(() => {
         const fetchNutritionists = async () => {
             try {
@@ -30,7 +30,6 @@ export default function NutritionistListPage() {
                 setLoading(false);
             }
         };
-
         const debounce = setTimeout(fetchNutritionists, 300);
         return () => clearTimeout(debounce);
     }, [search, sortBy, maxFee, minRating]);

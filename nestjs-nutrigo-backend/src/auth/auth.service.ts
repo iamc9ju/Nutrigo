@@ -14,6 +14,7 @@ import { UserWithRelation } from './interface/user';
 import { AUTH_CONFIG } from 'src/common/constants/time.constants';
 import { ErrorMessages } from 'src/common/constants/response.constants';
 import { ConfigService } from '@nestjs/config';
+import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -48,6 +49,8 @@ export class AuthService {
     }
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
+    // ใน src/auth/auth.service.ts -> register method
+
     const result = await this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
@@ -57,27 +60,31 @@ export class AuthService {
           role: dto.role,
         },
       });
-      if (dto.role === 'patient') {
+
+      if (dto.role === UserRole.patient) {
         await tx.patient.create({
           data: {
             userId: user.userId,
-            firstName: dto.firstName,
-            lastName: dto.lastName,
+            firstName: dto.firstName!,
+            lastName: dto.lastName!,
           },
         });
-      } else if (dto.role === 'nutritionist') {
+      } else if (dto.role === UserRole.nutritionist) {
         await tx.nutritionist.create({
           data: {
             userId: user.userId,
-            firstName: dto.firstName,
-            lastName: dto.lastName,
+            firstName: dto.firstName!,
+            lastName: dto.lastName!,
+            licenseNumber: dto.licenseNumber!,
+            consultationFee: dto.consultationFee || 500,
           },
         });
-      } else if (dto.role === 'food_partner') {
+      } else if (dto.role === UserRole.food_partner) {
         await tx.foodPartner.create({
           data: {
             userId: user.userId,
-            name: `${dto.firstName} ${dto.lastName}`.trim(),
+            partnerName: dto.partnerName!,
+            address: dto.address,
           },
         });
       }
@@ -326,8 +333,8 @@ export class AuthService {
       if ('lastName' in profile) {
         lastName = (profile as { lastName: string }).lastName;
       }
-      if ('name' in profile) {
-        firstName = (profile as { name: string }).name;
+      if ('partnerName' in profile) {
+        firstName = (profile as { partnerName: string }).partnerName;
       }
     }
 

@@ -51,12 +51,28 @@ export const ChatWindow: React.FC = () => {
 
     const handleSendMessage = (content: string) => {
         if (socket && activeRoomId) {
+            const optimisticMessage = {
+                chatMessageId: `temp-${Date.now()}`,
+                chatRoomId: activeRoomId,
+                senderId: userId || '',
+                message: content,
+                type: MessageType.TEXT,
+                createdAt: new Date().toISOString(),
+                status: 'sending' as const,
+                isOptimistic: true,
+                sender: { email: useAuthStore.getState().user?.email || '' }
+            };
+
+            // Add to UI immediately
+            addMessage(activeRoomId, optimisticMessage);
+
             socket.emit('send_message', {
                 chatRoomId: activeRoomId,
                 content,
                 type: MessageType.TEXT
             }, (newMessage) => {
-                addMessage(activeRoomId, newMessage);
+                // Store will handle replacement because we check for content/sender match
+                addMessage(activeRoomId, { ...newMessage, status: 'sent' as const });
             });
         }
     };
@@ -74,9 +90,9 @@ export const ChatWindow: React.FC = () => {
     const nutritionist = currentRoom?.appointment.nutritionist;
 
     return (
-        <div className="flex flex-col h-full bg-[#FEF3C7]/40 overflow-hidden">
+        <div className="flex flex-col h-full bg-white overflow-hidden">
             {/* Header */}
-            <div className="px-6 py-4 bg-white/60 backdrop-blur-md flex items-center justify-between border-b border-orange-100/50 mx-4 mt-4 rounded-2xl shadow-sm">
+            <div className="px-6 py-4 bg-white flex items-center justify-between border-b border-orange-100/50 shadow-sm relative z-20">
                 <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center font-bold text-orange-600 border border-white">
                         {nutritionist?.firstName[0]}
@@ -85,9 +101,12 @@ export const ChatWindow: React.FC = () => {
                         <h3 className="font-bold text-gray-800 text-lg leading-tight">
                             Dr.{nutritionist?.firstName}
                         </h3>
-                        <p className="text-xs text-gray-400">
-                            last seen recently
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                            <p className="text-xs text-gray-400">
+                                online
+                            </p>
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -103,7 +122,7 @@ export const ChatWindow: React.FC = () => {
             {/* Message List */}
             <div
                 ref={scrollRef}
-                className="flex-1 overflow-y-auto p-6 flex flex-col gap-6"
+                className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 bg-[#FEF9F0]"
             >
                 {currentMessages.map((msg, index) => {
                     const isMe = msg.senderId === userId;
@@ -130,7 +149,13 @@ export const ChatWindow: React.FC = () => {
                                     <span className="text-[10px] text-gray-400 font-medium tracking-tight">
                                         {format(new Date(msg.createdAt), 'h:mm a')}
                                     </span>
-                                    {isMe && <CheckCheck size={14} className="text-gray-400" />}
+                                    {isMe && (
+                                        msg.status === 'sending' ? (
+                                            <span className="text-[9px] text-orange-400 font-medium italic animate-pulse">กำลังส่ง...</span>
+                                        ) : (
+                                            <CheckCheck size={14} className="text-gray-400" />
+                                        )
+                                    )}
                                 </div>
                             </div>
                         </React.Fragment>
@@ -139,7 +164,7 @@ export const ChatWindow: React.FC = () => {
             </div>
 
             {/* Input */}
-            <div className="p-4">
+            <div className="p-6 bg-white border-t border-orange-100/50 relative z-20">
                 <MessageInput onSendMessage={handleSendMessage} disabled={!isConnected} />
             </div>
         </div>

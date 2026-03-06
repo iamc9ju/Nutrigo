@@ -25,19 +25,19 @@ export default function Sidebar() {
 
   const menuItems = [
     { icon: LayoutGrid, label: "แดชบอร์ด", href: "/dashboard" },
-    { icon: Heart, label: "บริการโภชนาการ", href: "/dashboard/nutrition" },
-    { icon: Calendar, label: "การนัดหมาย", href: "/dashboard/appointments", roles: ["patient"] },
-    { icon: Calendar, label: "ปฏิทิน", href: "/dashboard/calendar" },
-    { icon: MessageSquare, label: "ข้อความ", href: "/dashboard/chat" },
+    { icon: Heart, label: "บริการโภชนาการ", href: "/dashboard/nutrition", roles: ["patient", "admin"] },
+    { icon: Calendar, label: "การนัดหมาย", href: "/dashboard/appointments", roles: ["patient", "nutritionist", "admin"] },
+    { icon: Calendar, label: "ปฏิทิน", href: "/dashboard/calendar", roles: ["nutritionist", "admin"] },
+    { icon: MessageSquare, label: "ข้อความ", href: "/dashboard/chat", roles: ["patient", "nutritionist", "admin"] },
     { icon: Utensils, label: "เมนูสุขภาพ", href: "/dashboard/menu" },
-    { icon: BookOpen, label: "แผนการกิน", href: "/dashboard/meal-plan" },
-    { icon: ScrollText, label: "บันทึกอาหาร", href: "/dashboard/food-diary" },
-    { icon: BarChart2, label: "ความคืบหน้า", href: "/dashboard/progress" },
+    { icon: BookOpen, label: "แผนการกิน", href: "/dashboard/meal-plan", roles: ["patient", "nutritionist", "admin"] },
+    { icon: ScrollText, label: "บันทึกอาหาร", href: "/dashboard/food-diary", roles: ["patient"] },
+    { icon: BarChart2, label: "ความคืบหน้า", href: "/dashboard/progress", roles: ["patient", "admin"] },
     { icon: UserCog, label: "ตั้งค่า", href: "/dashboard/setting" },
   ];
 
   const userRole = useAuthStore((state) => state.user?.role);
-  const filteredMenuItems = menuItems.filter(item => !item.roles || item.roles.includes(userRole as string));
+  const filteredMenuItems = menuItems.filter(item => !item.roles || item.roles.includes(userRole as any));
 
   const handleLogout = async () => {
     try {

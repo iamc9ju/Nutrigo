@@ -42,7 +42,7 @@ export interface Nutritionist {
 export interface FoodPartner {
   foodPartnerId: number;
   userId: string;
-  name: string;
+  partnerName: string;
   description: string | null;
   address: string | null;
   commissionRate: Decimal;

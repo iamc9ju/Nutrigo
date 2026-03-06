@@ -53,7 +53,7 @@ export default async function DashboardLayout({
 
       <Sidebar />
       <main className="ml-64 mr-0 xl:mr-80 min-h-screen p-8 transition-all duration-300 relative z-10">
-        <div className="max-w-5xl mx-auto">{children}</div>
+        <div className="max-w-7xl mx-auto">{children}</div>
       </main>
       <RightPanel />
     </div>

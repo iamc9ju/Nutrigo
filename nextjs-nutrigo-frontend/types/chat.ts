@@ -11,6 +11,8 @@ export interface ChatMessage {
   message: string;
   type: MessageType;
   createdAt: string;
+  status?: "sending" | "sent" | "failed";
+  isOptimistic?: boolean;
   sender: {
     email: string;
   };

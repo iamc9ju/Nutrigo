@@ -15,6 +15,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiBody,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -33,6 +34,45 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'ลงทะเบียนผู้ใช้ใหม่' })
+  @ApiBody({
+    type: RegisterDto,
+    examples: {
+      patient: {
+        summary: 'Register as Patient',
+        value: {
+          email: 'patient@test.com',
+          password: 'password123',
+          role: 'patient',
+          firstName: 'John',
+          lastName: 'Doe',
+          phone: '0812345678',
+        },
+      },
+      nutritionist: {
+        summary: 'Register as Nutritionist',
+        value: {
+          email: 'doctor@test.com',
+          password: 'password123',
+          role: 'nutritionist',
+          firstName: 'Sarah',
+          lastName: 'Smith',
+          licenseNumber: 'LIC-998877',
+          consultationFee: 800,
+        },
+      },
+      partner: {
+        summary: 'Register as Food Partner (Shop)',
+        value: {
+          email: 'shop@test.com',
+          password: 'password123',
+          role: 'food_partner',
+          partnerName: 'Clean Food Express',
+          address: 'Downtown Bangkok',
+          phone: '021112222',
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 201, description: 'ลงทะเบียนสำเร็จ' })
   @ApiResponse({ status: 400, description: 'ข้อมูลไม่ครบ หรืออีเมลซ้ำ' })
   @ResponseMessage(SuccessMessages.AUTH.REGISTER)

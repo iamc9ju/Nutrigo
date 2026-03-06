@@ -104,7 +104,7 @@ export class ChatService {
         },
         messages: {
           orderBy: { createdAt: 'desc' },
-          take: 1,
+          take: 20,
         },
       },
     });
