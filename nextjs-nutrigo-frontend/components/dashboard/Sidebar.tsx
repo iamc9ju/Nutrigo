@@ -13,6 +13,8 @@ import {
   BarChart2,
   LogOut,
   UserCog,
+  Clock,
+  Package,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth-store";
 import { useRouter } from "next/navigation";
@@ -27,9 +29,11 @@ export default function Sidebar() {
     { icon: LayoutGrid, label: "แดชบอร์ด", href: "/dashboard" },
     { icon: Heart, label: "บริการโภชนาการ", href: "/dashboard/nutrition", roles: ["patient", "admin"] },
     { icon: Calendar, label: "การนัดหมาย", href: "/dashboard/appointments", roles: ["patient", "nutritionist", "admin"] },
-    { icon: Calendar, label: "ปฏิทิน", href: "/dashboard/calendar", roles: ["nutritionist", "admin"] },
+    { icon: Clock, label: "จัดการเวลาทำงาน", href: "/dashboard/nutritionists/schedule", roles: ["nutritionist", "admin"] },
     { icon: MessageSquare, label: "ข้อความ", href: "/dashboard/chat", roles: ["patient", "nutritionist", "admin"] },
-    { icon: Utensils, label: "เมนูสุขภาพ", href: "/dashboard/menu" },
+    { icon: Utensils, label: "เมนูสุขภาพ", href: "/dashboard/menu", roles: ["patient", "admin"] },
+    { icon: Utensils, label: "จัดการเมนู", href: "/dashboard/menu", roles: ["food_partner", "admin"] },
+    { icon: Package, label: "รายการสั่งซื้อ", href: "/dashboard/orders", roles: ["patient", "food_partner", "admin"] },
     { icon: BookOpen, label: "แผนการกิน", href: "/dashboard/meal-plan", roles: ["patient", "nutritionist", "admin"] },
     { icon: ScrollText, label: "บันทึกอาหาร", href: "/dashboard/food-diary", roles: ["patient"] },
     { icon: BarChart2, label: "ความคืบหน้า", href: "/dashboard/progress", roles: ["patient", "admin"] },
@@ -63,15 +67,14 @@ export default function Sidebar() {
 
   return (
     <aside className="w-64 bg-white h-screen fixed left-0 top-0 border-r border-gray-100 flex flex-col p-6 z-20 shadow-sm">
-      <div className="flex items-center gap-3 mb-10 px-2">
-        <div className="w-8 h-8 bg-[#C6E065] rounded-lg flex items-center justify-center">
+      <Link href="/" className="flex items-center gap-3 mb-10 px-2 group">
+        <div className="w-8 h-8 bg-[#C6E065] rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
           <span className="text-lg">🍽️</span>
         </div>
-        { }
         <span className="font-black text-[#3d3522] text-xl tracking-wide">
           NutriGo
         </span>
-      </div>
+      </Link>
 
       <nav className="flex-1 space-y-2">
         {filteredMenuItems.map((item) => {

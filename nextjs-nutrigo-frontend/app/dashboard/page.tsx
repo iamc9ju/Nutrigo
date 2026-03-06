@@ -1,18 +1,58 @@
 "use client";
 
 import StatCard from '@/components/dashboard/StatCard';
+import Link from 'next/link';
+import { Utensils, Heart, Calendar, ChevronRight } from 'lucide-react';
 
 export default function DashboardPage() {
   return (
     <div className="space-y-8">
-      { }
-      <div>
-        <h1 className="text-3xl font-black text-[#3d3522]">
-          สวัสดี, ผู้ใช้งานใหม่!
-        </h1>
-        <p className="text-[#8a7550] mt-1 font-medium">
-          มาเริ่มดูแลสุขภาพให้ดีขึ้นตั้งแต่วันนี้กันเถอะ
-        </p>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-[#3d3522]">
+            สวัสดี, ผู้ใช้งานใหม่!
+          </h1>
+          <p className="text-[#8a7550] mt-1 font-medium">
+            มาเริ่มดูแลสุขภาพให้ดีขึ้นตั้งแต่วันนี้กันเถอะ
+          </p>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="flex flex-wrap gap-3">
+          <Link href="/dashboard/menu" className="flex items-center gap-3 bg-white border border-[#f0e6cc] p-3 rounded-2xl hover:border-[#C6E065] hover:bg-[#C6E065]/5 transition-all group">
+            <div className="w-10 h-10 bg-[#C6E065]/20 rounded-xl flex items-center justify-center">
+              <Utensils className="w-5 h-5 text-[#4A6707]" />
+            </div>
+            <div className="text-left">
+              <p className="text-[10px] font-black text-[#8a7550] uppercase">Food Menu</p>
+              <p className="text-xs font-bold text-[#3d3522]">สั่งอาหารสุขภาพ</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:translate-x-1 transition-transform" />
+          </Link>
+
+          <Link href="/dashboard/nutrition" className="flex items-center gap-3 bg-white border border-[#f0e6cc] p-3 rounded-2xl hover:border-[#C6E065] hover:bg-[#C6E065]/5 transition-all group">
+            <div className="w-10 h-10 bg-[#C6E065]/20 rounded-xl flex items-center justify-center">
+              <Heart className="w-5 h-5 text-[#4A6707]" />
+            </div>
+            <div className="text-left">
+              <p className="text-[10px] font-black text-[#8a7550] uppercase">Consult</p>
+              <p className="text-xs font-bold text-[#3d3522]">ปรึกษาโภชนาการ</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:translate-x-1 transition-transform" />
+          </Link>
+
+          <Link href="/dashboard/appointments" className="flex items-center gap-3 bg-white border border-[#f0e6cc] p-3 rounded-2xl hover:border-[#C6E065] hover:bg-[#C6E065]/5 transition-all group">
+            <div className="w-10 h-10 bg-[#C6E065]/20 rounded-xl flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-[#4A6707]" />
+            </div>
+            <div className="text-left">
+              <p className="text-[10px] font-black text-[#8a7550] uppercase">Visits</p>
+              <p className="text-xs font-bold text-[#3d3522]">นัดหมายของฉัน</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </div>
       </div>
 
       { }

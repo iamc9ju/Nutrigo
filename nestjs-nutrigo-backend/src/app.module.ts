@@ -19,6 +19,7 @@ import { AppointmentsModule } from './appointments/appointments.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { ChatModule } from './chat/chat.module';
 import { MenuItemsModule } from './menu-items/menu-items.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { MenuItemsModule } from './menu-items/menu-items.module';
     WebhooksModule,
     ChatModule,
     MenuItemsModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [

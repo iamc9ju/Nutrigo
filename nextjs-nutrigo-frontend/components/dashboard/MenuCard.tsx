@@ -3,17 +3,18 @@
 import { MenuItem } from "@/app/services/menu-items";
 import { Utensils, Flame, Scale, ShoppingCart, Plus, Minus } from "lucide-react";
 import { useState } from "react";
+import { useCartStore } from "@/store/cart-store";
 
 interface MenuCardProps {
     item: MenuItem;
-    onAddToCart?: (item: MenuItem, quantity: number) => void;
 }
 
-export default function MenuCard({ item, onAddToCart }: MenuCardProps) {
+export default function MenuCard({ item }: MenuCardProps) {
     const [quantity, setQuantity] = useState(1);
+    const addItem = useCartStore((state) => state.addItem);
 
     const handleAddToCart = () => {
-        onAddToCart?.(item, quantity);
+        addItem(item, quantity);
     };
 
     return (
@@ -24,9 +25,14 @@ export default function MenuCard({ item, onAddToCart }: MenuCardProps) {
                         src={item.imageUrl}
                         alt={item.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop";
+                            target.onerror = null; // Prevent infinite loop
+                        }}
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[#c4b390]">
+                    <div className="w-full h-full flex items-center justify-center text-[#c4b390] bg-[#faf8f2]">
                         <Utensils className="w-12 h-12 opacity-20" />
                     </div>
                 )}

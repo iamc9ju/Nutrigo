@@ -3,6 +3,7 @@ import Sidebar from '@/components/dashboard/Sidebar';
 import RightPanel from '@/components/dashboard/RightPanel';
 import BackgroundPattern from '@/components/dashboard/BackgroundPattern';
 import AuthInitializer from '@/components/AuthInitializer';
+import CartWrapper from "@/components/cart/CartWrapper";
 
 export default async function DashboardLayout({
   children,
@@ -31,31 +32,31 @@ export default async function DashboardLayout({
         headers: {
           Cookie: cookieHeader,
         },
-        // cache: 'no-store' is important so Next.js doesn't cache the user profile across requests
         cache: "no-store",
       });
 
       if (res.ok) {
         const json = await res.json();
         user = json.data;
-      } else {
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error("Failed to fetch user in layout:", err);
     }
   }
 
   return (
     <div className="min-h-screen bg-[#FFFBF2] relative overflow-hidden">
       <BackgroundPattern />
-      { }
       <AuthInitializer user={user} />
 
       <Sidebar />
-      <main className="ml-64 mr-0 xl:mr-80 min-h-screen p-8 transition-all duration-300 relative z-10">
-        <div className="max-w-7xl mx-auto">{children}</div>
-      </main>
+      <div className="flex-1 ml-64 mr-0 xl:mr-80 min-h-screen transition-all duration-300 relative z-10">
+        <main className="p-8">{children}</main>
+      </div>
       <RightPanel />
+
+      {/* Client-side Cart components */}
+      <CartWrapper />
     </div>
   );
 }

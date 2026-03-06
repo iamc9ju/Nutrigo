@@ -43,6 +43,7 @@ model Patient {
   healthMetrics     HealthMetric[]
   user              User           @relation(fields: [userId], references: [userId], onDelete: Cascade)
   reviews           Review[]
+  orders            Order[]
 
   @@map("patients")
 }
@@ -241,8 +242,47 @@ model MenuItem {
 
   // Relations
   foodPartner FoodPartner @relation(fields: [foodPartnerId], references: [foodPartnerId], onDelete: Cascade)
+  orderItems  OrderItem[]
 
   @@map("menu_items")
+}
+
+model Order {
+  orderId         String        @id @default(uuid()) @map("order_id") @db.Uuid
+  patientId       String        @map("patient_id") @db.Uuid
+  totalAmount     Decimal       @map("total_amount") @db.Decimal(10, 2)
+  status          OrderStatus   @default(PENDING)
+  paymentStatus   PaymentStatus @default(UNPAID)
+  deliveryAddress String        @map("delivery_address") @db.Text
+  contactPhone    String        @map("contact_phone") @db.VarChar(20)
+  chargeId        String?       @unique @map("charge_id") @db.VarChar(100)
+  qrCodeUrl       String?       @map("qr_code_url") @db.VarChar(500)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  patient Patient     @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+  items   OrderItem[]
+
+  @@index([patientId])
+  @@map("orders")
+}
+
+model OrderItem {
+  orderItemId  Int     @id @default(autoincrement()) @map("order_item_id")
+  orderId      String  @map("order_id") @db.Uuid
+  menuItemId   Int     @map("menu_item_id")
+  quantity     Int
+  priceAtOrder Decimal @map("price_at_order") @db.Decimal(10, 2)
+  totalPrice   Decimal @map("total_price") @db.Decimal(10, 2)
+
+  // Relations
+  order    Order    @relation(fields: [orderId], references: [orderId], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [menuItemId], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([menuItemId])
+  @@map("order_items")
 }
 
 enum UserRole {
@@ -279,4 +319,18 @@ enum MessageType {
   text
   image
   food_card
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  SHIPPING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
 }

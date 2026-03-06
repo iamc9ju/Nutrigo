@@ -43,19 +43,6 @@ export default function FoodMenuPage() {
         return () => clearTimeout(timer);
     }, [search, category, maxCalories, sortBy, page]);
 
-    const handleAddToCart = (item: MenuItem, quantity: number) => {
-        Swal.fire({
-            title: "เพิ่มลงตะกร้าแล้ว!",
-            text: `เพิ่ม ${item.name} จำนวน ${quantity} ชุด ลงในตะกร้าของคุณ`,
-            icon: "success",
-            toast: true,
-            position: "top-end",
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true,
-        });
-    };
-
     const categories = [
         { value: "", label: "ทั้งหมด" },
         { value: "Clean Food", label: "อาหารคลีน" },
@@ -165,7 +152,7 @@ export default function FoodMenuPage() {
                 <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                         {items.map((item) => (
-                            <MenuCard key={item.menuItemId} item={item} onAddToCart={handleAddToCart} />
+                            <MenuCard key={item.menuItemId} item={item} />
                         ))}
                     </div>
 

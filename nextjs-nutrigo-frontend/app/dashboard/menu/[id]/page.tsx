@@ -20,6 +20,7 @@ import {
     Citrus
 } from "lucide-react";
 import Swal from "sweetalert2";
+import { useCartStore } from "@/store/cart-store";
 
 export default function MenuDetailPage() {
     const { id } = useParams();
@@ -27,6 +28,7 @@ export default function MenuDetailPage() {
     const [item, setItem] = useState<MenuItem | null>(null);
     const [loading, setLoading] = useState(true);
     const [quantity, setQuantity] = useState(1);
+    const addItem = useCartStore((state) => state.addItem);
 
     useEffect(() => {
         if (id) {
@@ -46,6 +48,7 @@ export default function MenuDetailPage() {
 
     const handleAddToCart = () => {
         if (!item) return;
+        addItem(item, quantity);
         Swal.fire({
             title: "เพิ่มลงตะกร้าแล้ว!",
             text: `เพิ่ม ${item.name} จำนวน ${quantity} ชุด ลงในตะกร้าของคุณ`,
@@ -93,8 +96,16 @@ export default function MenuDetailPage() {
                 <div className="space-y-6">
                     <div className="aspect-square bg-[#faf8f2] rounded-[48px] border-4 border-white shadow-2xl shadow-[#3d3522]/5 overflow-hidden flex items-center justify-center relative">
                         {item.imageUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                            <img
+                                src={item.imageUrl}
+                                alt={item.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop";
+                                    target.onerror = null;
+                                }}
+                            />
                         ) : (
                             <div className="text-center p-12 opacity-20">
                                 <Utensils className="w-24 h-24 mx-auto mb-4" />
